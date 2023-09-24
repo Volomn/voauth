@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  voauth_api:
+    image: voauth_api:dev
+    build:
+      context: backend
+      dockerfile: dockerfile
+    container_name: voauth_api
+    ports:
+      - "7005:5000"
+    volumes:
+      - ./backend:/code
+    command: ["air", "-c", ".air.toml"]
+
