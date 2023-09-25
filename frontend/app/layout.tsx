@@ -6,8 +6,8 @@ import "@mantine/core/styles.css";
 import { MantineProvider, ColorSchemeScript } from "@mantine/core";
 
 export const metadata = {
-  title: "My Mantine app",
-  description: "I have followed setup instructions carefully",
+  title: "Voauth",
+  description: "A guide to implementing an oauth2 compliant platform",
 };
 
 export default function RootLayout({
