@@ -7,7 +7,7 @@ export default function Home() {
         <Image src={GridLines} alt="" className="w-screen h-screen" />
       </div>
 
-      <div className="flex flex-col gap-10">
+      <div className="flex flex-col gap-10 typewriter">
         <h1 className="text-7xl text-white font-bold">Voauth</h1>
         <h4 className="text-3xl font-light text-white animate-pulse text-center">
           Coming Soon...
