@@ -2,7 +2,10 @@ package api
 
 import (
 	"net/http"
+	"log/slog"
 
+	apiMiddleware "github.com/Volomn/voauth/backend/api/middleware"
+	"github.com/Volomn/voauth/backend/app"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -17,9 +20,10 @@ func (rd HealthResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func GetApiRouter() chi.Router {
+func GetApiRouter(app *app.Application) chi.Router {
 	// create api router
 	router := chi.NewRouter()
+	slog.Info("API router created")
 
 	// configure middlewares
 	router.Use(middleware.RequestID)
@@ -37,10 +41,13 @@ func GetApiRouter() chi.Router {
 		// AllowCredentials bool
 
 	}))
+	router.Use(apiMiddleware.ApplicationMiddleware(app))
+	slog.Info("API router middlewares configured")
 
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		render.Status(r, http.StatusOK)
 		render.Render(w, r, &HealthResponse{Status: "OK"})
 	})
+
 	return router
 }
