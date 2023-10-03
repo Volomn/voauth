@@ -9,7 +9,23 @@ services:
     container_name: voauth_api
     ports:
       - "7005:5000"
+    env_file:
+      - backend/.env
     volumes:
       - ./backend:/code
     command: ["air", "-c", ".air.toml"]
+    depends_on:
+      - voauth_db
 
+  voauth_db:
+    image: postgres:15.3
+    container_name: voauth_db
+    volumes:
+      - voauth_db_data:/var/lib/postgresql/data/
+    ports:
+      - "5566:5432"
+    env_file:
+      - backend/.env
+
+volumes:
+  voauth_db_data:
