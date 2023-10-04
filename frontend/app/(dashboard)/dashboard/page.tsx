@@ -1,3 +1,12 @@
+import { Navbar } from "./navbar";
+import { EmptyNotes } from "./empty-notes";
+import { Notes } from "./notes";
 export default function Dashboard() {
-  return <h1>Dashboard</h1>;
+  return (
+    <section className="h-screen flex flex-col">
+      <Navbar />
+      <Notes />
+      {/* <EmptyNotes /> */}
+    </section>
+  );
 }

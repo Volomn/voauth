@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <AppShell navbar={{ width: 300, breakpoint: "xs" }} padding="xl">
+    <AppShell navbar={{ width: 300, breakpoint: "xs" }}>
       <AppShellNavbar p="xl" bg="brand.7">
         <Text fz="32px" fw={600} c="white">
           Voauth
