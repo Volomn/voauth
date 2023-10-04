@@ -3,7 +3,7 @@
 import "./globals.css";
 import "@mantine/core/styles.css";
 
-import { MantineProvider, ColorSchemeScript } from "@mantine/core";
+import { MantineProvider, ColorSchemeScript, NavLink } from "@mantine/core";
 
 export const metadata = {
   title: "Voauth",
@@ -22,7 +22,27 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body>
-        <MantineProvider>{children}</MantineProvider>
+        <MantineProvider
+          theme={{
+            primaryColor: "brand",
+            colors: {
+              brand: [
+                "#eff0fb",
+                "#dbdcf0",
+                "#b3b6e3",
+                "#898dd6",
+                "#656acb",
+                "#4f54c4",
+                "#1B2063",
+                "#151957",
+                "#0c0f3d",
+                "#080a31",
+              ],
+            },
+          }}
+        >
+          {children}
+        </MantineProvider>
       </body>
     </html>
   );
