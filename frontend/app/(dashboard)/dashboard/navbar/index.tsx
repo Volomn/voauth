@@ -1,5 +1,5 @@
-"use client";
-import { Avatar, Box, Group, TextInput } from "@mantine/core";
+import ProfileAvatar from "@/components/profile-avatar";
+import { Group, TextInput } from "@mantine/core";
 export function Navbar() {
   return (
     <div className="p-4 border-b">
@@ -12,9 +12,7 @@ export function Navbar() {
           maw="600px"
         />
 
-        <Box pl={8} className="border-l">
-          <Avatar size="md" />
-        </Box>
+        <ProfileAvatar />
       </Group>
     </div>
   );
