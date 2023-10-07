@@ -2,6 +2,7 @@ package domain
 
 import (
 	"slices"
+	"strings"
 
 	valueobject "github.com/Volomn/voauth/backend/domain/valueobjects"
 	"github.com/google/uuid"
@@ -18,7 +19,13 @@ type Note struct {
 	SharedUsers []valueobject.SharedUser
 }
 
-func NewNote(noteUUID uuid.UUID, ownerUUID uuid.UUID, isPublic, isFavorite, isArchived bool, title string, content string) *Note {
+func NewNote(noteUUID uuid.UUID, ownerUUID uuid.UUID, isPublic, isFavorite, isArchived bool, title string, content string) (*Note, error) {
+	if len(strings.TrimSpace(title)) <= 0 {
+		return nil, EmptyNoteTitleError
+	}
+	if len(strings.TrimSpace(content)) <= 0 {
+		return nil, EmptyNoteContentError
+	}
 	return &Note{
 		Aggregate:  Aggregate{UUID: noteUUID},
 		IsPublic:   isPublic,
@@ -27,7 +34,7 @@ func NewNote(noteUUID uuid.UUID, ownerUUID uuid.UUID, isPublic, isFavorite, isAr
 		Title:      title,
 		Content:    content,
 		OwnerUUID:  ownerUUID,
-	}
+	}, nil
 }
 
 func (note *Note) MakePublic() {

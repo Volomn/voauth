@@ -8,10 +8,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewNoteWithEmptyTitleFail(t *testing.T) {
+	noteUUID, _ := uuid.NewUUID()
+	ownerUUID, _ := uuid.NewUUID()
+	_, err := NewNote(noteUUID, ownerUUID, false, false, false, "", "Some content")
+	assert.EqualError(t, EmptyNoteTitleError, err.Error())
+}
+
+func TestNewNoteWithEmptyContentFail(t *testing.T) {
+	noteUUID, _ := uuid.NewUUID()
+	ownerUUID, _ := uuid.NewUUID()
+	_, err := NewNote(noteUUID, ownerUUID, false, false, false, "Title", "")
+	assert.EqualError(t, EmptyNoteContentError, err.Error())
+}
+
 func TestMakeNotePublic(t *testing.T) {
 	noteUUID, _ := uuid.NewUUID()
 	ownerUUID, _ := uuid.NewUUID()
-	note := NewNote(noteUUID, ownerUUID, false, false, false, "", "")
+	note, _ := NewNote(noteUUID, ownerUUID, false, false, false, "Title", "Content")
 	assert.Equal(t, false, note.IsPublic)
 	note.MakePublic()
 	assert.Equal(t, true, note.IsPublic)
@@ -20,7 +34,7 @@ func TestMakeNotePublic(t *testing.T) {
 func TestMakeNotePrivate(t *testing.T) {
 	noteUUID, _ := uuid.NewUUID()
 	ownerUUID, _ := uuid.NewUUID()
-	note := NewNote(noteUUID, ownerUUID, true, false, false, "", "")
+	note, _ := NewNote(noteUUID, ownerUUID, true, false, false, "Title", "Content")
 	assert.Equal(t, true, note.IsPublic)
 	note.MakePrivate()
 	assert.Equal(t, false, note.IsPublic)
@@ -29,7 +43,7 @@ func TestMakeNotePrivate(t *testing.T) {
 func TestArchiveNote(t *testing.T) {
 	noteUUID, _ := uuid.NewUUID()
 	ownerUUID, _ := uuid.NewUUID()
-	note := NewNote(noteUUID, ownerUUID, true, false, false, "", "")
+	note, _ := NewNote(noteUUID, ownerUUID, true, false, false, "Title", "Content")
 	assert.Equal(t, false, note.IsArchived)
 	note.Archive()
 	assert.Equal(t, true, note.IsArchived)
@@ -38,7 +52,7 @@ func TestArchiveNote(t *testing.T) {
 func TestUnarchiveNote(t *testing.T) {
 	noteUUID, _ := uuid.NewUUID()
 	ownerUUID, _ := uuid.NewUUID()
-	note := NewNote(noteUUID, ownerUUID, true, false, true, "", "")
+	note, _ := NewNote(noteUUID, ownerUUID, true, false, true, "Title", "Content")
 	assert.Equal(t, true, note.IsArchived)
 	note.UnArchive()
 	assert.Equal(t, false, note.IsArchived)
@@ -47,7 +61,7 @@ func TestUnarchiveNote(t *testing.T) {
 func TestShareNoteWithNewUser(t *testing.T) {
 	noteUUID, _ := uuid.NewUUID()
 	ownerUUID, _ := uuid.NewUUID()
-	note := NewNote(noteUUID, ownerUUID, false, false, false, "", "")
+	note, _ := NewNote(noteUUID, ownerUUID, false, false, false, "Title", "Content")
 	assert.Equal(t, 0, len(note.SharedUsers))
 	newUserUUID, _ := uuid.NewUUID()
 	note.ShareWithUsers([]uuid.UUID{newUserUUID}, valueobject.SharedNotePermission(valueobject.WRITE))
@@ -59,7 +73,7 @@ func TestShareNoteWithNewUser(t *testing.T) {
 func TestShareNoteWithMultipleNewUsers(t *testing.T) {
 	noteUUID, _ := uuid.NewUUID()
 	ownerUUID, _ := uuid.NewUUID()
-	note := NewNote(noteUUID, ownerUUID, false, false, false, "", "")
+	note, _ := NewNote(noteUUID, ownerUUID, false, false, false, "Title", "Content")
 	assert.Equal(t, 0, len(note.SharedUsers))
 	newUserUUID, _ := uuid.NewUUID()
 	newUserUUID2, _ := uuid.NewUUID()
@@ -80,7 +94,7 @@ func TestShareNoteWithExistingSharedUserButWithDifferentPermission(t *testing.T)
 	exisingUserUUID4, _ := uuid.NewUUID()
 
 	// create new note
-	note := NewNote(noteUUID, ownerUUID, false, false, false, "", "")
+	note, _ := NewNote(noteUUID, ownerUUID, false, false, false, "Title", "Content")
 
 	// share note with 4 users all with read permissions
 	note.ShareWithUsers([]uuid.UUID{exisingUserUUID1, exisingUserUUID2, exisingUserUUID3, exisingUserUUID4}, valueobject.SharedNotePermission(valueobject.READ))
