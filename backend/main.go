@@ -10,6 +10,7 @@ import (
 	"github.com/Volomn/voauth/backend/api"
 	"github.com/Volomn/voauth/backend/app"
 	"github.com/Volomn/voauth/backend/infra"
+	"github.com/Volomn/voauth/backend/infra/repository"
 	"github.com/caarlos0/env/v9"
 	"github.com/go-chi/chi/v5"
 	"github.com/spf13/cobra"
@@ -32,7 +33,6 @@ func DatabaseMiddleware(db *gorm.DB) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-
 }
 
 func initServeCommand(cfg config) *cobra.Command {
@@ -49,10 +49,10 @@ func initServeCommand(cfg config) *cobra.Command {
 			infra.AutoMigrateDB(db)
 
 			// Instantiate new application
-			app := app.New(app.ApplicationConfig{}, db)
+			application := app.NewApplication(app.ApplicationConfig{}, db, &infra.PasswordHasher{}, &infra.UUIDGenerator{}, &repository.UserRepository{})
 
 			// get api router
-			apiRouter := api.GetApiRouter(app)
+			apiRouter := api.GetApiRouter(application)
 
 			mainRouter := chi.NewRouter()
 
