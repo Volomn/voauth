@@ -1,5 +1,12 @@
 package domain
 
+import (
+	"net/mail"
+	"strings"
+
+	"github.com/google/uuid"
+)
+
 type User struct {
 	Aggregate
 	FirstName      string
@@ -11,8 +18,26 @@ type User struct {
 	PhotoURL       string
 }
 
-func (user *User) SetPassword(newHashedPassword string) {
-	user.HashedPassword = newHashedPassword
+func NewUser(userUUID uuid.UUID, firstName, lastName, email, hashedPassword, address, bio, photoURL string) (*User, error) {
+	if len(strings.TrimSpace(firstName)) <= 0 {
+		return nil, EmptyFirstNameError
+	}
+	if len(strings.TrimSpace(lastName)) <= 0 {
+		return nil, EmptyLastNameError
+	}
+	if _, err := mail.ParseAddress(email); err != nil {
+		return nil, InvalidEmailError
+	}
+	return &User{
+		Aggregate:      Aggregate{UUID: userUUID},
+		FirstName:      firstName,
+		LastName:       lastName,
+		Email:          strings.ToLower(email),
+		Address:        address,
+		HashedPassword: hashedPassword,
+		Bio:            bio,
+		PhotoURL:       photoURL,
+	}, nil
 }
 
 func (user *User) SetAddress(newAddress string) {

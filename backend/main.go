@@ -10,6 +10,7 @@ import (
 	"github.com/Volomn/voauth/backend/api"
 	"github.com/Volomn/voauth/backend/app"
 	"github.com/Volomn/voauth/backend/infra"
+	"github.com/Volomn/voauth/backend/infra/repository"
 	"github.com/caarlos0/env/v9"
 	"github.com/go-chi/chi/v5"
 	"github.com/spf13/cobra"
@@ -17,12 +18,13 @@ import (
 )
 
 type config struct {
-	Port              int    `env:"PORT" envDefault:"5000"`
-	DATABASE_HOST     string `env:"DATABASE_HOST" envDefault:"voauth_db"`
-	DATABASE_PORT     int    `env:"DATABASE_PORT" envDefault:"5432" `
-	DATABASE_USER     string `env:"DATABASE_USER" envDefault:"voauth"`
-	DATABASE_PASSWORD string `env:"DATABASE_PASSWORD" envDefault:"voauth"`
-	DATABASE_NAME     string `env:"DATABASE_NAME" envDefault:"voauth"`
+	Port             int    `env:"PORT" envDefault:"5000"`
+	DatabaseHost     string `env:"DATABASE_HOST" envDefault:"voauth_db"`
+	DatabasePort     int    `env:"DATABASE_PORT" envDefault:"5432" `
+	DatabaseUser     string `env:"DATABASE_USER" envDefault:"voauth"`
+	DatabasePassword string `env:"DATABASE_PASSWORD" envDefault:"voauth"`
+	DatabaseName     string `env:"DATABASE_NAME" envDefault:"voauth"`
+	AuthSecretKey    string `env:"AUTH_SECRET_KEY" envDefault:"devsecret"`
 }
 
 func DatabaseMiddleware(db *gorm.DB) func(http.Handler) http.Handler {
@@ -32,7 +34,6 @@ func DatabaseMiddleware(db *gorm.DB) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-
 }
 
 func initServeCommand(cfg config) *cobra.Command {
@@ -43,16 +44,18 @@ func initServeCommand(cfg config) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			// initialize database
-			db := infra.InitDb(cfg.DATABASE_HOST, cfg.DATABASE_USER, cfg.DATABASE_PASSWORD, cfg.DATABASE_NAME, cfg.DATABASE_PORT)
+			db := infra.InitDb(cfg.DatabaseHost, cfg.DatabaseUser, cfg.DatabasePassword, cfg.DatabaseName, cfg.DatabasePort)
 
 			// create and update database tables
 			infra.AutoMigrateDB(db)
 
 			// Instantiate new application
-			app := app.New(app.ApplicationConfig{}, db)
+			application := app.NewApplication(app.ApplicationConfig{
+				AuthSecretKey: cfg.AuthSecretKey,
+			}, db, &infra.PasswordHasher{}, &infra.UUIDGenerator{}, &repository.UserRepository{})
 
 			// get api router
-			apiRouter := api.GetApiRouter(app)
+			apiRouter := api.GetApiRouter(application)
 
 			mainRouter := chi.NewRouter()
 
