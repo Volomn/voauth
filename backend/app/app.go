@@ -45,7 +45,7 @@ func (app *Application) SignupUser(firstName, lastName, email, password string) 
 	slog.Info("About to sign up new user", "firstName", firstName, "lastName", lastName, "email", email)
 	existingUser := app.userRepository.GetUserByEmail(app.db, strings.ToLower(email))
 	if existingUser != nil {
-		slog.Info("User with email address already exists", "email", email)
+		slog.Info("User with email address already exists", "email", email, "user", existingUser)
 		return domain.User{}, UserWithEmailAlreadyExistsError
 	}
 	newUserUUID, _ := app.uuidGenerator.New()
@@ -59,6 +59,11 @@ func (app *Application) SignupUser(firstName, lastName, email, password string) 
 		return domain.User{}, SomethingWentWrongError
 	}
 	user, err := domain.NewUser(newUserUUID, firstName, lastName, email, hashedPassword, "", "", "")
+	if err != nil {
+		slog.Error("Unable to create new user", "error", err.Error())
+		return domain.User{}, err
+	}
+
 	if err := app.userRepository.Save(app.db, *user); err != nil {
 		slog.Error("Unable to save new user: %w", err)
 		return domain.User{}, SomethingWentWrongError
