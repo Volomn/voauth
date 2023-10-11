@@ -153,3 +153,51 @@ func TestSignupUserWithWeakPassword(t *testing.T) {
 	assert.Equal(t, WeakPasswordError, err)
 	assert.Equal(t, domain.User{}, user)
 }
+
+func TestAuthenticateWithEmailAndPassword(t *testing.T) {
+	//Instantiate mock infra
+	var mockUserRepository MockUserRepository
+	var mockPasswordHasher MockPasswordHasher
+	var mockUUIDGenerator MockUUIDGenerator
+
+	userUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	validEmail := "johndoe@test.com"
+	validPassword := "password"
+	invalidEmail := "invalidemail@test.com"
+	invalidPassword := "invalidPassword"
+
+	user := &domain.User{
+		Aggregate:      domain.Aggregate{UUID: userUUID},
+		Email:          validEmail,
+		HashedPassword: "hashpasswordhash",
+		FirstName:      "John",
+		LastName:       "Doe",
+	}
+
+	mockPasswordHasher.On("IsPasswordMatch", validPassword, user.HashedPassword).Return(true)
+	mockPasswordHasher.On("IsPasswordMatch", invalidPassword, user.HashedPassword).Return(false)
+	mockUserRepository.On("GetUserByEmail", &gorm.DB{}, validEmail).Return(user)
+	mockUserRepository.On("GetUserByEmail", &gorm.DB{}, invalidEmail).Return(nil)
+
+	tests := []struct {
+		Email         string
+		Password      string
+		ExpectedUser  domain.User
+		ExpectedError error
+	}{
+		{Email: validEmail, Password: validPassword, ExpectedUser: *user, ExpectedError: nil},
+		{Email: validEmail, Password: "invalidPassword", ExpectedUser: domain.User{}, ExpectedError: InvalidLoginCredentialsError},
+		{Email: invalidEmail, Password: validPassword, ExpectedUser: domain.User{}, ExpectedError: InvalidLoginCredentialsError},
+	}
+
+	for _, test := range tests {
+		// return hashedPassword when HashPassword method is called with testPassword
+		app := NewApplication(ApplicationConfig{}, &gorm.DB{}, &mockPasswordHasher, &mockUUIDGenerator, &mockUserRepository)
+		authUser, err := app.AuthenticateWithEmailAndPassword(test.Email, test.Password)
+		assert.Equal(t, test.ExpectedError, err)
+		assert.Equal(t, test.ExpectedUser, authUser)
+	}
+
+}

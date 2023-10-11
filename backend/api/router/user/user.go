@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/Volomn/voauth/backend/api/middleware"
+	"github.com/Volomn/voauth/backend/api/app"
 	"github.com/go-chi/render"
 )
 
@@ -18,7 +18,7 @@ func SignupUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	application := r.Context().Value("app").(middleware.Application)
+	application := r.Context().Value("app").(app.Application)
 	_, err := application.SignupUser(data.FirstName, data.LastName, data.Email, data.Password)
 	if err != nil {
 		slog.Info("Unable to sign up user", "error", err.Error())

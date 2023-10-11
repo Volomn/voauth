@@ -37,6 +37,10 @@ func NewApplication(config ApplicationConfig, db *gorm.DB, passwordHasher Passwo
 	}
 }
 
+func (app *Application) GetAuthSecretKey() string {
+	return app.config.AuthSecretKey
+}
+
 func (app *Application) SignupUser(firstName, lastName, email, password string) (domain.User, error) {
 	slog.Info("About to sign up new user", "firstName", firstName, "lastName", lastName, "email", email)
 	existingUser := app.userRepository.GetUserByEmail(app.db, strings.ToLower(email))
@@ -58,6 +62,19 @@ func (app *Application) SignupUser(firstName, lastName, email, password string) 
 	if err := app.userRepository.Save(app.db, *user); err != nil {
 		slog.Error("Unable to save new user: %w", err)
 		return domain.User{}, SomethingWentWrongError
+	}
+	return *user, nil
+}
+
+func (app *Application) AuthenticateWithEmailAndPassword(email, password string) (domain.User, error) {
+	slog.Info("About to authenticate user", "email", email)
+	user := app.userRepository.GetUserByEmail(app.db, strings.ToLower(email))
+	if user == nil {
+		slog.Info("User not found", "email", email)
+		return domain.User{}, InvalidLoginCredentialsError
+	}
+	if app.passwordHasher.IsPasswordMatch(password, user.HashedPassword) == false {
+		return domain.User{}, InvalidLoginCredentialsError
 	}
 	return *user, nil
 }

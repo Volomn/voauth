@@ -23,6 +23,16 @@ func (app *MockApplication) SignupUser(firstName, lastName, email, password stri
 	return args.Get(0).(domain.User), args.Error(1)
 }
 
+func (app *MockApplication) AuthenticateWithEmailAndPassword(email, password string) (domain.User, error) {
+	args := app.Called(email, password)
+	return args.Get(0).(domain.User), args.Error(1)
+}
+
+func (app *MockApplication) GetAuthSecretKey() string {
+	args := app.Called()
+	return args.String(0)
+}
+
 func TestSignupUserHandler(t *testing.T) {
 	var mockApplication MockApplication
 
