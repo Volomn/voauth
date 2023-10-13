@@ -3,6 +3,7 @@ package infra
 import (
 	"fmt"
 
+	"github.com/Volomn/voauth/backend/infra/repository"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -17,5 +18,5 @@ func InitDb(dbHost, dbUser, dbPassword, dbName string, dbPort int) *gorm.DB {
 }
 
 func AutoMigrateDB(db *gorm.DB) {
-	db.AutoMigrate()
+	db.AutoMigrate(&repository.DbUser{})
 }
