@@ -1,9 +1,13 @@
 // Import styles of packages that you've installed.
 // All packages except `@mantine/hooks` require styles imports
 import "./globals.css";
-import "@mantine/core/styles.css";
 
-import { MantineProvider, ColorSchemeScript, NavLink } from "@mantine/core";
+import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
+import { MantineProvider, ColorSchemeScript } from "@mantine/core";
+import { ModalsProvider } from "@mantine/modals";
+import { Notifications } from "@mantine/notifications";
+import ReactQueryProvider from "@/providers/react-query";
 
 export const metadata = {
   title: "Voauth",
@@ -41,7 +45,10 @@ export default function RootLayout({
             },
           }}
         >
-          {children}
+          <ModalsProvider>
+            <Notifications position="top-right" />
+            <ReactQueryProvider>{children}</ReactQueryProvider>
+          </ModalsProvider>
         </MantineProvider>
       </body>
     </html>

@@ -1,5 +1,6 @@
 "use client";
-import { NavLink, Stack } from "@mantine/core";
+import { Button, NavLink, Stack, Text } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { usePathname, useRouter } from "next/navigation";
 import classes from "./nav-items.module.css";
 
@@ -11,8 +12,19 @@ import StarIcon from "@/public/assets/icons/star.svg";
 export default function NavItems() {
   const pathname = usePathname();
   const router = useRouter();
+
+  function handleLogout() {
+    return modals.openConfirmModal({
+      title: "Please confirm your action",
+      children: <Text size="sm">Are you sure you want to logout?</Text>,
+      labels: { confirm: "Confirm", cancel: "Cancel" },
+      onCancel: () => console.log("Cancel"),
+      onConfirm: () => router.push("/login"),
+    });
+  }
+
   return (
-    <Stack mt="xl">
+    <Stack mt="xl" className="h-full">
       <NavLink
         label="All Notes"
         active={pathname === "/dashboard"}
@@ -41,6 +53,10 @@ export default function NavItems() {
         leftSection={<BinIcon />}
         classNames={classes}
       />
+
+      <Button mt="auto" onClick={handleLogout}>
+        Logout
+      </Button>
     </Stack>
   );
 }
