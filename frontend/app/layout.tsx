@@ -8,6 +8,7 @@ import { MantineProvider, ColorSchemeScript } from "@mantine/core";
 import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
 import ReactQueryProvider from "@/providers/react-query";
+import { montserrat, sora } from "@/fonts/fonts";
 
 export const metadata = {
   title: "Voauth",
@@ -25,7 +26,9 @@ export default function RootLayout({
         <ColorSchemeScript />
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
-      <body>
+      <body
+        className={`${montserrat.variable} ${sora.variable} ${montserrat.className}`}
+      >
         <MantineProvider
           theme={{
             primaryColor: "brand",
