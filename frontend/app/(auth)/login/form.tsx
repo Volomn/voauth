@@ -1,6 +1,11 @@
 "use client";
 import { useLogin } from "@/api/hooks/auth";
-import { Button, PasswordInput, TextInput } from "@mantine/core";
+import {
+  Button,
+  LoadingOverlay,
+  PasswordInput,
+  TextInput,
+} from "@mantine/core";
 import { zodResolver, useForm } from "@mantine/form";
 import { z } from "zod";
 
@@ -27,9 +32,10 @@ export function LoginForm() {
 
   return (
     <form
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-4 relative"
       onSubmit={registerForm.onSubmit(handleSubmit)}
     >
+      <LoadingOverlay visible={isLoading} />
       <TextInput
         label="Email"
         labelProps={{ className: "mb-2" }}
@@ -43,7 +49,12 @@ export function LoginForm() {
         size="md"
         {...registerForm.getInputProps("password")}
       />
-      <Button size="md" type="submit" loading={isLoading}>
+      <Button
+        size="md"
+        type="submit"
+        className="bg-primary-01 hover:bg-primary-01"
+        loading={isLoading}
+      >
         Sign In
       </Button>
     </form>

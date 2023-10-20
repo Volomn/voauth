@@ -1,6 +1,11 @@
 "use client";
 import { useRegister } from "@/api/hooks/auth";
-import { Button, TextInput, PasswordInput } from "@mantine/core";
+import {
+  Button,
+  TextInput,
+  PasswordInput,
+  LoadingOverlay,
+} from "@mantine/core";
 import {
   useForm,
   isEmail,
@@ -57,9 +62,10 @@ export default function RegisterForm() {
 
   return (
     <form
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-4 relative"
       onSubmit={registerForm.onSubmit(handleSubmit)}
     >
+      <LoadingOverlay visible={isLoading} />
       <TextInput
         label="First name"
         labelProps={{ className: "mb-2" }}
@@ -94,7 +100,12 @@ export default function RegisterForm() {
         {...registerForm.getInputProps("confirmPassword")}
       />
 
-      <Button size="md" type="submit" loading={isLoading}>
+      <Button
+        size="md"
+        type="submit"
+        className="bg-primary-01 hover:bg-primary-01"
+        loading={isLoading}
+      >
         Sign Up
       </Button>
     </form>
