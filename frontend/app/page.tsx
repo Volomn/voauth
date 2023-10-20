@@ -26,7 +26,7 @@ export default function Home() {
               Unlock the power of OAuth2 with Voauth
             </h1>
             <article className="text-shade-01 text-lg">
-              The Voath application is a web-based tool designed to show
+              The Voauth application is a web-based tool designed to show
               developers how to create their own OAuth provider platforms,
               similar to those of Google, Twitter, GitHub, and more.
             </article>
