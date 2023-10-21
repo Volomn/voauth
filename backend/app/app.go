@@ -23,17 +23,19 @@ type Application struct {
 	config         ApplicationConfig
 	db             *gorm.DB
 	userRepository repository.UserRepository
+	noteRepository repository.NoteRepository
 	passwordHasher PasswordHasher
 	uuidGenerator  UUIDGenerator
 }
 
-func NewApplication(config ApplicationConfig, db *gorm.DB, passwordHasher PasswordHasher, uuidGenerator UUIDGenerator, userRepository repository.UserRepository) *Application {
+func NewApplication(config ApplicationConfig, db *gorm.DB, passwordHasher PasswordHasher, uuidGenerator UUIDGenerator, userRepository repository.UserRepository, noteRepository repository.NoteRepository) *Application {
 	return &Application{
 		config:         config,
 		db:             db,
 		passwordHasher: passwordHasher,
 		uuidGenerator:  uuidGenerator,
 		userRepository: userRepository,
+		noteRepository: noteRepository,
 	}
 }
 
@@ -82,4 +84,24 @@ func (app *Application) AuthenticateWithEmailAndPassword(email, password string)
 		return domain.User{}, InvalidLoginCredentialsError
 	}
 	return *user, nil
+}
+
+func (app *Application) AddNote(userUUID uuid.UUID, title, content string) (domain.Note, error) {
+	slog.Info("About to add note", "userUUID", userUUID.String(), "title", title, "content", content)
+	user := app.userRepository.GetUserByUUID(app.db, userUUID)
+	if user == nil {
+		slog.Info("User not found", "userUUID", userUUID.String())
+		return domain.Note{}, EntityNotFoundError
+	}
+	noteUUID, _ := app.uuidGenerator.New()
+	note, err := domain.NewNote(noteUUID, user.UUID, false, false, false, title, content)
+	if err != nil {
+		slog.Info("Error creating note", "error", err.Error())
+		return domain.Note{}, err
+	}
+	if err = app.noteRepository.Save(app.db, *note); err != nil {
+		slog.Info("Error saving note to db", "error", err.Error())
+		return domain.Note{}, SomethingWentWrongError
+	}
+	return *note, nil
 }

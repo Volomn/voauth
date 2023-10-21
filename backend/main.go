@@ -52,7 +52,7 @@ func initServeCommand(cfg config) *cobra.Command {
 			// Instantiate new application
 			application := app.NewApplication(app.ApplicationConfig{
 				AuthSecretKey: cfg.AuthSecretKey,
-			}, db, &infra.PasswordHasher{}, &infra.UUIDGenerator{}, &repository.UserRepository{})
+			}, db, &infra.PasswordHasher{}, &infra.UUIDGenerator{}, &repository.UserRepository{}, &repository.NoteRepository{})
 
 			// get api router
 			apiRouter := api.GetApiRouter(application)

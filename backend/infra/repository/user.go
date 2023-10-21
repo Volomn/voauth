@@ -64,6 +64,10 @@ func (repo *UserRepository) GetUserByEmail(db *gorm.DB, email string) *domain.Us
 
 }
 
+func (repo *UserRepository) GetUserByUUID(db *gorm.DB, userUUID uuid.UUID) *domain.User {
+	return nil
+}
+
 func (repo *UserRepository) Save(db *gorm.DB, user domain.User) error {
 	ormUser := repo.toOrm(user)
 	result := db.Clauses(clause.OnConflict{

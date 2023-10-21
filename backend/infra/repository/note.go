@@ -1,0 +1,12 @@
+package repository
+
+import (
+	"github.com/Volomn/voauth/backend/domain"
+	"gorm.io/gorm"
+)
+
+type NoteRepository struct{}
+
+func (repo *NoteRepository) Save(db *gorm.DB, note domain.Note) error {
+	return nil
+}
