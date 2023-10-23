@@ -61,12 +61,20 @@ func (note *Note) UnArchive() {
 	note.IsArchived = false
 }
 
-func (note *Note) SetTitle(newTitle string) {
+func (note *Note) SetTitle(newTitle string) error {
+	if len(strings.TrimSpace(newTitle)) <= 0 {
+		return EmptyNoteTitleError
+	}
 	note.Title = newTitle
+	return nil
 }
 
-func (note *Note) SetContent(newContent string) {
+func (note *Note) SetContent(newContent string) error {
+	if len(strings.TrimSpace(newContent)) <= 0 {
+		return EmptyNoteContentError
+	}
 	note.Content = newContent
+	return nil
 }
 
 func (note *Note) ShareWithUsers(usersUUIDS []uuid.UUID, permission valueobject.SharedNotePermission) {

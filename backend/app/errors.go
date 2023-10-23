@@ -16,3 +16,19 @@ type AuthenticationError struct {
 func (err *AuthenticationError) Error() string {
 	return err.Message
 }
+
+type EntityNotFoundError struct {
+	Message string
+}
+
+func (err *EntityNotFoundError) Error() string {
+	return err.Message
+}
+
+type AuthorizationError struct {
+	Message string
+}
+
+func (err *AuthorizationError) Error() string {
+	return err.Message
+}

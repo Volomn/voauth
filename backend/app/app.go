@@ -111,3 +111,39 @@ func (app *Application) AddNote(ctx context.Context, title, content string) (dom
 	}
 	return *note, nil
 }
+
+func (app *Application) UpdateNote(ctx context.Context, noteUUID uuid.UUID, title, content string) (domain.Note, error) {
+	auth, ok := ctx.Value("auth").(Auth)
+	if ok == false {
+		return domain.Note{}, &AuthenticationError{"Authentication not provided"}
+	}
+	slog.Info("About to add note", "authUserUUID", auth.UserUUID.String(), "title", title, "content", content)
+	user := app.userRepository.GetUserByUUID(app.db, auth.UserUUID)
+	if user == nil {
+		slog.Info("User not found", "userUUID", auth.UserUUID.String())
+		return domain.Note{}, &AuthenticationError{Message: "User not found"}
+	}
+	note := app.noteRepository.GetNoteByUUID(app.db, noteUUID)
+	if note == nil {
+		slog.Info("Note not found", "noteUUID", noteUUID.String())
+		return domain.Note{}, &EntityNotFoundError{Message: "Note not found"}
+	}
+	if note.OwnerUUID != user.UUID {
+		slog.Info("User trying to update note not belonging to it.", "authUserUUID", auth.UserUUID, "ownerUUID", note.OwnerUUID)
+		return domain.Note{}, &AuthorizationError{Message: "User is not permitted to update this note"}
+	}
+	if err := note.SetTitle(title); err != nil {
+		slog.Info("Unable to update note", "error", err.Error())
+		return domain.Note{}, err
+	}
+	if err := note.SetContent(content); err != nil {
+		slog.Info("Unable to update note", "error", err.Error())
+		return domain.Note{}, err
+	}
+	slog.Info("Updated note is", "note", note)
+	if err := app.noteRepository.Save(app.db, *note); err != nil {
+		slog.Info("Error saving note to db", "error", err.Error())
+		return domain.Note{}, SomethingWentWrongError
+	}
+	return *note, nil
+}

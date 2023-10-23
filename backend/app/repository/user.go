@@ -13,5 +13,6 @@ type UserRepository interface {
 }
 
 type NoteRepository interface {
+	GetNoteByUUID(db *gorm.DB, noteUUID uuid.UUID) *domain.Note
 	Save(db *gorm.DB, note domain.Note) error
 }

@@ -230,3 +230,87 @@ func TestAddNote(t *testing.T) {
 		assert.Equal(t, test.ExpectedNote, note)
 	}
 }
+
+func TestUpdateNote(t *testing.T) {
+	//Instantiate mock infra
+	var mockUserRepository mock.MockUserRepository
+	var mockNoteRepository mock.MockNoteRepository
+	var mockUUIDGenerator mock.MockUUIDGenerator
+	var mockPasswordHasher mock.MockPasswordHasher
+
+	userUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	notFoundUserUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	notOwnerUserUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	noteUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	notFoundNoteUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	auth := Auth{UserUUID: userUUID}
+	ctx := context.Background()
+	contextWithValidAuth := context.WithValue(ctx, "auth", auth)
+	contextWithNoAuth := ctx
+	contextWithInvalidAuth := context.WithValue(ctx, "auth", Auth{UserUUID: notFoundUserUUID})
+	contextWithAuthOfNotOwnerUser := context.WithValue(ctx, "auth", Auth{UserUUID: notOwnerUserUUID})
+
+	mockUserRepository.On("GetUserByUUID", &gorm.DB{}, userUUID).Return(&domain.User{
+		Aggregate:      domain.Aggregate{UUID: userUUID},
+		FirstName:      "John",
+		LastName:       "Doe",
+		Email:          "johndoe@test.com",
+		HashedPassword: "hashpasswordhash",
+	})
+	mockUserRepository.On("GetUserByUUID", &gorm.DB{}, notOwnerUserUUID).Return(&domain.User{
+		Aggregate:      domain.Aggregate{UUID: notOwnerUserUUID},
+		FirstName:      "Jane",
+		LastName:       "Doe",
+		Email:          "janedoe@test.com",
+		HashedPassword: "hashpasswordhash",
+	})
+	mockUserRepository.On("GetUserByUUID", &gorm.DB{}, notFoundUserUUID).Return(nil)
+	mockNoteRepository.On("GetNoteByUUID", &gorm.DB{}, noteUUID).Return(&domain.Note{
+		Aggregate: domain.Aggregate{UUID: noteUUID},
+		OwnerUUID: userUUID,
+		Title:     "Lorem",
+		Content:   "Ipsum",
+	})
+	mockNoteRepository.On("GetNoteByUUID", &gorm.DB{}, notFoundNoteUUID).Return(nil)
+
+	tests := []struct {
+		Ctx           context.Context
+		NoteUUID      uuid.UUID
+		Title         string
+		Content       string
+		ExpectedNote  domain.Note
+		ExpectedError error
+	}{
+		{Ctx: contextWithValidAuth, NoteUUID: noteUUID, Title: "Title one", Content: "Content one", ExpectedNote: domain.Note{Aggregate: domain.Aggregate{UUID: noteUUID}, OwnerUUID: userUUID, Title: "Title one", Content: "Content one"}, ExpectedError: nil},
+		{Ctx: contextWithValidAuth, NoteUUID: noteUUID, Title: "", Content: "Content two", ExpectedNote: domain.Note{}, ExpectedError: domain.EmptyNoteTitleError},
+		{Ctx: contextWithValidAuth, NoteUUID: noteUUID, Title: "Title three", Content: "", ExpectedNote: domain.Note{}, ExpectedError: domain.EmptyNoteContentError},
+		{Ctx: contextWithInvalidAuth, NoteUUID: noteUUID, Title: "Title four", Content: "Content four", ExpectedNote: domain.Note{}, ExpectedError: &AuthenticationError{Message: "User not found"}},
+		{Ctx: contextWithNoAuth, NoteUUID: noteUUID, Title: "Title five", Content: "Content five", ExpectedNote: domain.Note{}, ExpectedError: &AuthenticationError{Message: "Authentication not provided"}},
+		{Ctx: contextWithValidAuth, NoteUUID: notFoundNoteUUID, Title: "Title six", Content: "Content six", ExpectedNote: domain.Note{}, ExpectedError: &EntityNotFoundError{Message: "Note not found"}},
+		{Ctx: contextWithAuthOfNotOwnerUser, NoteUUID: noteUUID, Title: "Title seven", Content: "Content seven", ExpectedNote: domain.Note{}, ExpectedError: &AuthorizationError{Message: "User is not permitted to update this note"}},
+	}
+
+	for _, test := range tests {
+		// return hashedPassword when HashPassword method is called with testPassword
+		mockNoteRepository.On("Save", &gorm.DB{}, domain.Note{
+			Aggregate: domain.Aggregate{UUID: noteUUID},
+			OwnerUUID: userUUID,
+			Title:     test.Title,
+			Content:   test.Content,
+		}).Return(nil)
+		app := NewApplication(ApplicationConfig{}, &gorm.DB{}, &mockPasswordHasher, &mockUUIDGenerator, &mockUserRepository, &mockNoteRepository)
+		note, err := app.UpdateNote(test.Ctx, test.NoteUUID, test.Title, test.Content)
+		assert.Equal(t, test.ExpectedError, err)
+		assert.Equal(t, test.ExpectedNote, note)
+	}
+}
