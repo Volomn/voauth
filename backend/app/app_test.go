@@ -314,3 +314,76 @@ func TestUpdateNote(t *testing.T) {
 		assert.Equal(t, test.ExpectedNote, note)
 	}
 }
+
+func TestDeleteNote(t *testing.T) {
+	//Instantiate mock infra
+	var mockUserRepository mock.MockUserRepository
+	var mockNoteRepository mock.MockNoteRepository
+	var mockUUIDGenerator mock.MockUUIDGenerator
+	var mockPasswordHasher mock.MockPasswordHasher
+
+	userUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	notFoundUserUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	notOwnerUserUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	noteUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	notFoundNoteUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	auth := Auth{UserUUID: userUUID}
+	ctx := context.Background()
+	contextWithValidAuth := context.WithValue(ctx, "auth", auth)
+	contextWithNoAuth := ctx
+	contextWithInvalidAuth := context.WithValue(ctx, "auth", Auth{UserUUID: notFoundUserUUID})
+	contextWithAuthOfNotOwnerUser := context.WithValue(ctx, "auth", Auth{UserUUID: notOwnerUserUUID})
+
+	mockUserRepository.On("GetUserByUUID", &gorm.DB{}, userUUID).Return(&domain.User{
+		Aggregate:      domain.Aggregate{UUID: userUUID},
+		FirstName:      "John",
+		LastName:       "Doe",
+		Email:          "johndoe@test.com",
+		HashedPassword: "hashpasswordhash",
+	})
+	mockUserRepository.On("GetUserByUUID", &gorm.DB{}, notOwnerUserUUID).Return(&domain.User{
+		Aggregate:      domain.Aggregate{UUID: notOwnerUserUUID},
+		FirstName:      "Jane",
+		LastName:       "Doe",
+		Email:          "janedoe@test.com",
+		HashedPassword: "hashpasswordhash",
+	})
+	mockUserRepository.On("GetUserByUUID", &gorm.DB{}, notFoundUserUUID).Return(nil)
+	mockNoteRepository.On("GetNoteByUUID", &gorm.DB{}, noteUUID).Return(&domain.Note{
+		Aggregate: domain.Aggregate{UUID: noteUUID},
+		OwnerUUID: userUUID,
+		Title:     "Lorem",
+		Content:   "Ipsum",
+	})
+	mockNoteRepository.On("GetNoteByUUID", &gorm.DB{}, notFoundNoteUUID).Return(nil)
+
+	tests := []struct {
+		Ctx           context.Context
+		NoteUUID      uuid.UUID
+		ExpectedError error
+	}{
+		{Ctx: contextWithValidAuth, NoteUUID: noteUUID, ExpectedError: nil},
+		{Ctx: contextWithInvalidAuth, NoteUUID: noteUUID, ExpectedError: &AuthenticationError{Message: "User not found"}},
+		{Ctx: contextWithNoAuth, NoteUUID: noteUUID, ExpectedError: &AuthenticationError{Message: "Authentication not provided"}},
+		{Ctx: contextWithValidAuth, NoteUUID: notFoundNoteUUID, ExpectedError: &EntityNotFoundError{Message: "Note not found"}},
+		{Ctx: contextWithAuthOfNotOwnerUser, NoteUUID: noteUUID, ExpectedError: &AuthorizationError{Message: "User is not permitted to delete this note"}},
+	}
+
+	for _, test := range tests {
+		// return hashedPassword when HashPassword method is called with testPassword
+		mockNoteRepository.On("Delete", &gorm.DB{}, domain.Note{Aggregate: domain.Aggregate{UUID: test.NoteUUID}, Title: "Lorem", Content: "Ipsum", OwnerUUID: userUUID}).Return(nil)
+		app := NewApplication(ApplicationConfig{}, &gorm.DB{}, &mockPasswordHasher, &mockUUIDGenerator, &mockUserRepository, &mockNoteRepository)
+		err := app.DeleteNote(test.Ctx, test.NoteUUID)
+		assert.Equal(t, test.ExpectedError, err)
+	}
+}

@@ -147,3 +147,30 @@ func (app *Application) UpdateNote(ctx context.Context, noteUUID uuid.UUID, titl
 	}
 	return *note, nil
 }
+
+func (app *Application) DeleteNote(ctx context.Context, noteUUID uuid.UUID) error {
+	auth, ok := ctx.Value("auth").(Auth)
+	if ok == false {
+		return &AuthenticationError{"Authentication not provided"}
+	}
+	slog.Info("About to delete note", "authUserUUID", auth.UserUUID.String(), "noteUUID", noteUUID.String())
+	user := app.userRepository.GetUserByUUID(app.db, auth.UserUUID)
+	if user == nil {
+		slog.Info("User not found", "userUUID", auth.UserUUID.String())
+		return &AuthenticationError{Message: "User not found"}
+	}
+	note := app.noteRepository.GetNoteByUUID(app.db, noteUUID)
+	if note == nil {
+		slog.Info("Note not found", "noteUUID", noteUUID.String())
+		return &EntityNotFoundError{Message: "Note not found"}
+	}
+	if note.OwnerUUID != user.UUID {
+		slog.Info("User trying to update note not belonging to it.", "authUserUUID", auth.UserUUID, "ownerUUID", note.OwnerUUID)
+		return &AuthorizationError{Message: "User is not permitted to delete this note"}
+	}
+	if err := app.noteRepository.Delete(app.db, *note); err != nil {
+		slog.Info("Error deleting note in db", "error", err.Error())
+		return SomethingWentWrongError
+	}
+	return nil
+}

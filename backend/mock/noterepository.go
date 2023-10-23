@@ -14,6 +14,11 @@ func (repo *MockNoteRepository) Save(db *gorm.DB, note domain.Note) error {
 	return args.Error(0)
 }
 
+func (repo *MockNoteRepository) Delete(db *gorm.DB, note domain.Note) error {
+	args := repo.Called(db, note)
+	return args.Error(0)
+}
+
 func (repo *MockNoteRepository) GetNoteByUUID(db *gorm.DB, noteUUID uuid.UUID) *domain.Note {
 	args := repo.Called(db, noteUUID)
 	returnValue := args.Get(0)

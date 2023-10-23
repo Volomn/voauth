@@ -12,6 +12,10 @@ func (repo *NoteRepository) Save(db *gorm.DB, note domain.Note) error {
 	return nil
 }
 
+func (repo *NoteRepository) Delete(db *gorm.DB, note domain.Note) error {
+	return nil
+}
+
 func (repo *NoteRepository) GetNoteByUUID(db *gorm.DB, noteUUID uuid.UUID) *domain.Note {
 	return nil
 }
