@@ -13,4 +13,5 @@ type Application interface {
 	AuthenticateWithEmailAndPassword(ctx context.Context, email, password string) (domain.User, error)
 	AddNote(ctx context.Context, title, content string) (domain.Note, error)
 	UpdateNote(ctx context.Context, noteUUID uuid.UUID, title, content string) (domain.Note, error)
+	DeleteNote(ctx context.Context, noteUUID uuid.UUID) error
 }

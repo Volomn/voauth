@@ -106,3 +106,50 @@ func UpdateNoteHandler(w http.ResponseWriter, r *http.Request) {
 	render.Status(r, 200)
 	render.JSON(w, r, map[string]string{"msg": "Note updated successfully"})
 }
+
+func DeleteNoteHandler(w http.ResponseWriter, r *http.Request) {
+	noteUUIDString := chi.URLParam(r, "noteUUID")
+	slog.Info("Note uuid from request", "noteUUID", noteUUIDString)
+	noteUUID, err := uuid.Parse(noteUUIDString)
+	if err != nil {
+		render.Status(r, 422)
+		render.JSON(w, r, map[string]string{"msg": "Invalid note uuid"})
+		return
+	}
+
+	application := r.Context().Value("app").(app.Application)
+	authUserUUID := r.Context().Value("authUserUUID").(uuid.UUID)
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "auth", a.Auth{UserUUID: authUserUUID})
+
+	err = application.DeleteNote(ctx, noteUUID)
+
+	if err != nil {
+		slog.Info("Unable to delete note", "error", err.Error())
+		var authError *a.AuthenticationError
+		var authorizationError *a.AuthorizationError
+		var notFoundError *a.EntityNotFoundError
+
+		if errors.As(err, &authError) {
+			render.Status(r, 401)
+			render.JSON(w, r, map[string]string{"msg": authError.Message})
+			return
+		} else if errors.As(err, &authorizationError) {
+			render.Status(r, 403)
+			render.JSON(w, r, map[string]string{"msg": "Not allowed"})
+			return
+		} else if errors.As(err, &notFoundError) {
+			render.Status(r, 404)
+			render.JSON(w, r, map[string]string{"msg": notFoundError.Message})
+			return
+
+		} else {
+			render.Status(r, 400)
+			render.JSON(w, r, map[string]string{"msg": err.Error()})
+			return
+		}
+	}
+	render.Status(r, 200)
+	render.JSON(w, r, map[string]string{"msg": "Note deleted successfully"})
+}

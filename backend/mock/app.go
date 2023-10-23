@@ -34,3 +34,8 @@ func (app *MockApplication) UpdateNote(ctx context.Context, noteUUID uuid.UUID, 
 	args := app.Called(ctx, noteUUID, title, content)
 	return args.Get(0).(domain.Note), args.Error(1)
 }
+
+func (app *MockApplication) DeleteNote(ctx context.Context, noteUUID uuid.UUID) error {
+	args := app.Called(ctx, noteUUID)
+	return args.Error(0)
+}
