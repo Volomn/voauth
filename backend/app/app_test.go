@@ -1,74 +1,22 @@
 package app
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Volomn/voauth/backend/domain"
+	"github.com/Volomn/voauth/backend/mock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
 )
 
-type MockDB struct{ mock.Mock }
-
-type MockUUIDGenerator struct{ mock.Mock }
-
-func (gen *MockUUIDGenerator) New() (uuid.UUID, error) {
-	args := gen.Called()
-	return args.Get(0).(uuid.UUID), args.Error(1)
-}
-
-type MockPasswordHasher struct{ mock.Mock }
-
-func (hasher *MockPasswordHasher) HashPassword(password string) (string, error) {
-	args := hasher.Called(password)
-	return args.String(0), args.Error(1)
-}
-
-func (hasher *MockPasswordHasher) IsPasswordMatch(password, hashedPassword string) bool {
-	args := hasher.Called(password, hashedPassword)
-	return args.Bool(0)
-}
-
-type MockUserRepository struct{ mock.Mock }
-
-func (repo *MockUserRepository) GetUserByEmail(db *gorm.DB, email string) *domain.User {
-	args := repo.Called(db, email)
-	returnValue := args.Get(0)
-	if returnValue == nil {
-		return nil
-	}
-	return returnValue.(*domain.User)
-}
-
-func (repo *MockUserRepository) GetUserByUUID(db *gorm.DB, userUUID uuid.UUID) *domain.User {
-	args := repo.Called(db, userUUID)
-	returnValue := args.Get(0)
-	if returnValue == nil {
-		return nil
-	}
-	return returnValue.(*domain.User)
-}
-
-func (repo *MockUserRepository) Save(db *gorm.DB, user domain.User) error {
-	args := repo.Called(db, user)
-	return args.Error(0)
-}
-
-type MockNoteRepository struct{ mock.Mock }
-
-func (repo *MockNoteRepository) Save(db *gorm.DB, note domain.Note) error {
-	args := repo.Called(db, note)
-	return args.Error(0)
-}
-
 func TestSignupUser(t *testing.T) {
 	//Instantiate mock infra
-	var mockUserRepository MockUserRepository
-	var mockNoteRepository MockNoteRepository
-	var mockPasswordHasher MockPasswordHasher
-	var mockUUIDGenerator MockUUIDGenerator
+	var mockUserRepository mock.MockUserRepository
+	var mockNoteRepository mock.MockNoteRepository
+	var mockPasswordHasher mock.MockPasswordHasher
+	var mockUUIDGenerator mock.MockUUIDGenerator
 
 	testEmail := "johndoe@test.com"
 	testFirstName := "John"
@@ -95,7 +43,7 @@ func TestSignupUser(t *testing.T) {
 	}).Return(nil)
 
 	app := NewApplication(ApplicationConfig{}, &gorm.DB{}, &mockPasswordHasher, &mockUUIDGenerator, &mockUserRepository, &mockNoteRepository)
-	user, err := app.SignupUser(testFirstName, testLastName, testEmail, testPassword)
+	user, err := app.SignupUser(context.Background(), testFirstName, testLastName, testEmail, testPassword)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, testEmail, user.Email)
 	assert.Equal(t, testFirstName, user.FirstName)
@@ -108,10 +56,10 @@ func TestSignupUser(t *testing.T) {
 
 func TestSignupUserWithAlreadyExistingEmail(t *testing.T) {
 	//Instantiate mock infra
-	var mockUserRepository MockUserRepository
-	var mockNoteRepository MockNoteRepository
-	var mockPasswordHasher MockPasswordHasher
-	var mockUUIDGenerator MockUUIDGenerator
+	var mockUserRepository mock.MockUserRepository
+	var mockNoteRepository mock.MockNoteRepository
+	var mockPasswordHasher mock.MockPasswordHasher
+	var mockUUIDGenerator mock.MockUUIDGenerator
 
 	testEmail := "johndoe@test.com"
 	testFirstName := "John"
@@ -139,17 +87,17 @@ func TestSignupUserWithAlreadyExistingEmail(t *testing.T) {
 	})
 
 	app := NewApplication(ApplicationConfig{}, &gorm.DB{}, &mockPasswordHasher, &mockUUIDGenerator, &mockUserRepository, &mockNoteRepository)
-	user, err := app.SignupUser(testFirstName, testLastName, testEmail, testPassword)
+	user, err := app.SignupUser(context.Background(), testFirstName, testLastName, testEmail, testPassword)
 	assert.Equal(t, UserWithEmailAlreadyExistsError, err)
 	assert.Equal(t, domain.User{}, user)
 }
 
 func TestSignupUserWithWeakPassword(t *testing.T) {
 	//Instantiate mock infra
-	var mockUserRepository MockUserRepository
-	var mockNoteRepository MockNoteRepository
-	var mockPasswordHasher MockPasswordHasher
-	var mockUUIDGenerator MockUUIDGenerator
+	var mockUserRepository mock.MockUserRepository
+	var mockNoteRepository mock.MockNoteRepository
+	var mockPasswordHasher mock.MockPasswordHasher
+	var mockUUIDGenerator mock.MockUUIDGenerator
 
 	testEmail := "johndoe@test.com"
 	testFirstName := "John"
@@ -168,17 +116,17 @@ func TestSignupUserWithWeakPassword(t *testing.T) {
 	mockUserRepository.On("GetUserByEmail", &gorm.DB{}, testEmail).Return(nil)
 
 	app := NewApplication(ApplicationConfig{}, &gorm.DB{}, &mockPasswordHasher, &mockUUIDGenerator, &mockUserRepository, &mockNoteRepository)
-	user, err := app.SignupUser(testFirstName, testLastName, testEmail, testPassword)
+	user, err := app.SignupUser(context.Background(), testFirstName, testLastName, testEmail, testPassword)
 	assert.Equal(t, WeakPasswordError, err)
 	assert.Equal(t, domain.User{}, user)
 }
 
 func TestAuthenticateWithEmailAndPassword(t *testing.T) {
 	//Instantiate mock infra
-	var mockUserRepository MockUserRepository
-	var mockNoteRepository MockNoteRepository
-	var mockPasswordHasher MockPasswordHasher
-	var mockUUIDGenerator MockUUIDGenerator
+	var mockUserRepository mock.MockUserRepository
+	var mockNoteRepository mock.MockNoteRepository
+	var mockPasswordHasher mock.MockPasswordHasher
+	var mockUUIDGenerator mock.MockUUIDGenerator
 
 	userUUID, err := uuid.NewUUID()
 	assert.Equal(t, nil, err)
@@ -215,7 +163,7 @@ func TestAuthenticateWithEmailAndPassword(t *testing.T) {
 	for _, test := range tests {
 		// return hashedPassword when HashPassword method is called with testPassword
 		app := NewApplication(ApplicationConfig{}, &gorm.DB{}, &mockPasswordHasher, &mockUUIDGenerator, &mockUserRepository, &mockNoteRepository)
-		authUser, err := app.AuthenticateWithEmailAndPassword(test.Email, test.Password)
+		authUser, err := app.AuthenticateWithEmailAndPassword(context.Background(), test.Email, test.Password)
 		assert.Equal(t, test.ExpectedError, err)
 		assert.Equal(t, test.ExpectedUser, authUser)
 	}
@@ -224,13 +172,22 @@ func TestAuthenticateWithEmailAndPassword(t *testing.T) {
 
 func TestAddNote(t *testing.T) {
 	//Instantiate mock infra
-	var mockUserRepository MockUserRepository
-	var mockNoteRepository MockNoteRepository
-	var mockUUIDGenerator MockUUIDGenerator
-	var mockPasswordHasher MockPasswordHasher
+	var mockUserRepository mock.MockUserRepository
+	var mockNoteRepository mock.MockNoteRepository
+	var mockUUIDGenerator mock.MockUUIDGenerator
+	var mockPasswordHasher mock.MockPasswordHasher
 
 	userUUID, err := uuid.NewUUID()
 	assert.Equal(t, nil, err)
+
+	notFoundUserUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	auth := Auth{UserUUID: userUUID}
+	ctx := context.Background()
+	contextWithValidAuth := context.WithValue(ctx, "auth", auth)
+	contextWithNoAuth := ctx
+	contextWithInvalidAuth := context.WithValue(ctx, "auth", Auth{UserUUID: notFoundUserUUID})
 
 	noteUUID, err := uuid.NewUUID()
 	assert.Equal(t, nil, err)
@@ -243,16 +200,20 @@ func TestAddNote(t *testing.T) {
 		Email:          "johndoe@test.com",
 		HashedPassword: "hashpasswordhash",
 	})
+	mockUserRepository.On("GetUserByUUID", &gorm.DB{}, notFoundUserUUID).Return(nil)
 
 	tests := []struct {
+		Ctx           context.Context
 		Title         string
 		Content       string
 		ExpectedNote  domain.Note
 		ExpectedError error
 	}{
-		{Title: "Title one", Content: "Content one", ExpectedNote: domain.Note{Aggregate: domain.Aggregate{UUID: noteUUID}, OwnerUUID: userUUID, Title: "Title one", Content: "Content one"}, ExpectedError: nil},
-		{Title: "", Content: "Content two", ExpectedNote: domain.Note{}, ExpectedError: domain.EmptyNoteTitleError},
-		{Title: "Title three", Content: "", ExpectedNote: domain.Note{}, ExpectedError: domain.EmptyNoteContentError},
+		{Ctx: contextWithValidAuth, Title: "Title one", Content: "Content one", ExpectedNote: domain.Note{Aggregate: domain.Aggregate{UUID: noteUUID}, OwnerUUID: userUUID, Title: "Title one", Content: "Content one"}, ExpectedError: nil},
+		{Ctx: contextWithValidAuth, Title: "", Content: "Content two", ExpectedNote: domain.Note{}, ExpectedError: domain.EmptyNoteTitleError},
+		{Ctx: contextWithValidAuth, Title: "Title three", Content: "", ExpectedNote: domain.Note{}, ExpectedError: domain.EmptyNoteContentError},
+		{Ctx: contextWithInvalidAuth, Title: "Title four", Content: "Content four", ExpectedNote: domain.Note{}, ExpectedError: &AuthenticationError{Message: "User not found"}},
+		{Ctx: contextWithNoAuth, Title: "Title five", Content: "Content five", ExpectedNote: domain.Note{}, ExpectedError: &AuthenticationError{Message: "Authentication not provided"}},
 	}
 
 	for _, test := range tests {
@@ -264,7 +225,7 @@ func TestAddNote(t *testing.T) {
 			Content:   test.Content,
 		}).Return(nil)
 		app := NewApplication(ApplicationConfig{}, &gorm.DB{}, &mockPasswordHasher, &mockUUIDGenerator, &mockUserRepository, &mockNoteRepository)
-		note, err := app.AddNote(userUUID, test.Title, test.Content)
+		note, err := app.AddNote(test.Ctx, test.Title, test.Content)
 		assert.Equal(t, test.ExpectedError, err)
 		assert.Equal(t, test.ExpectedNote, note)
 	}

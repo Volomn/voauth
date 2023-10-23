@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 	"strings"
 
@@ -39,11 +40,11 @@ func NewApplication(config ApplicationConfig, db *gorm.DB, passwordHasher Passwo
 	}
 }
 
-func (app *Application) GetAuthSecretKey() string {
+func (app *Application) GetAuthSecretKey(ctx context.Context) string {
 	return app.config.AuthSecretKey
 }
 
-func (app *Application) SignupUser(firstName, lastName, email, password string) (domain.User, error) {
+func (app *Application) SignupUser(ctx context.Context, firstName, lastName, email, password string) (domain.User, error) {
 	slog.Info("About to sign up new user", "firstName", firstName, "lastName", lastName, "email", email)
 	existingUser := app.userRepository.GetUserByEmail(app.db, strings.ToLower(email))
 	if existingUser != nil {
@@ -73,7 +74,7 @@ func (app *Application) SignupUser(firstName, lastName, email, password string) 
 	return *user, nil
 }
 
-func (app *Application) AuthenticateWithEmailAndPassword(email, password string) (domain.User, error) {
+func (app *Application) AuthenticateWithEmailAndPassword(ctx context.Context, email, password string) (domain.User, error) {
 	slog.Info("About to authenticate user", "email", email)
 	user := app.userRepository.GetUserByEmail(app.db, strings.ToLower(email))
 	if user == nil {
@@ -81,17 +82,22 @@ func (app *Application) AuthenticateWithEmailAndPassword(email, password string)
 		return domain.User{}, InvalidLoginCredentialsError
 	}
 	if app.passwordHasher.IsPasswordMatch(password, user.HashedPassword) == false {
+		slog.Info("User password does not match")
 		return domain.User{}, InvalidLoginCredentialsError
 	}
 	return *user, nil
 }
 
-func (app *Application) AddNote(userUUID uuid.UUID, title, content string) (domain.Note, error) {
-	slog.Info("About to add note", "userUUID", userUUID.String(), "title", title, "content", content)
-	user := app.userRepository.GetUserByUUID(app.db, userUUID)
+func (app *Application) AddNote(ctx context.Context, title, content string) (domain.Note, error) {
+	auth, ok := ctx.Value("auth").(Auth)
+	if ok == false {
+		return domain.Note{}, &AuthenticationError{"Authentication not provided"}
+	}
+	slog.Info("About to add note", "authUserUUID", auth.UserUUID.String(), "title", title, "content", content)
+	user := app.userRepository.GetUserByUUID(app.db, auth.UserUUID)
 	if user == nil {
-		slog.Info("User not found", "userUUID", userUUID.String())
-		return domain.Note{}, EntityNotFoundError
+		slog.Info("User not found", "userUUID", auth.UserUUID.String())
+		return domain.Note{}, &AuthenticationError{Message: "User not found"}
 	}
 	noteUUID, _ := app.uuidGenerator.New()
 	note, err := domain.NewNote(noteUUID, user.UUID, false, false, false, title, content)

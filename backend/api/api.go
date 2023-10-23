@@ -1,16 +1,19 @@
 package api
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
+	apiApp "github.com/Volomn/voauth/backend/api/app"
 	apiMiddleware "github.com/Volomn/voauth/backend/api/middleware"
 	"github.com/Volomn/voauth/backend/api/router/auth"
+	"github.com/Volomn/voauth/backend/api/router/note"
 	"github.com/Volomn/voauth/backend/api/router/user"
-	"github.com/Volomn/voauth/backend/app"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
+	"github.com/go-chi/jwtauth"
 	"github.com/go-chi/render"
 )
 
@@ -22,10 +25,11 @@ func (rd HealthResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func GetApiRouter(app *app.Application) chi.Router {
+func GetApiRouter(app apiApp.Application) chi.Router {
 	// create api router
 	router := chi.NewRouter()
 	slog.Info("API router created")
+	tokenAuth := jwtauth.New("HS256", []byte(app.GetAuthSecretKey(context.Background())), nil)
 
 	// configure middlewares
 	router.Use(middleware.RequestID)
@@ -44,10 +48,12 @@ func GetApiRouter(app *app.Application) chi.Router {
 
 	}))
 	router.Use(apiMiddleware.ApplicationMiddleware(app))
+	router.Use(jwtauth.Verifier(tokenAuth))
 	slog.Info("API router middlewares configured")
 
 	router.Mount("/users", user.GetUserRouter())
 	router.Mount("/auth", auth.GetAuthRouter())
+	router.Mount("/notes", note.GetNoteRouter())
 
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		render.Status(r, http.StatusOK)

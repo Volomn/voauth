@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -19,7 +20,8 @@ func SignupUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	application := r.Context().Value("app").(app.Application)
-	_, err := application.SignupUser(data.FirstName, data.LastName, data.Email, data.Password)
+	ctx := context.Background()
+	_, err := application.SignupUser(ctx, data.FirstName, data.LastName, data.Email, data.Password)
 	if err != nil {
 		slog.Info("Unable to sign up user", "error", err.Error())
 		render.Status(r, 400)
