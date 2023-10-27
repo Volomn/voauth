@@ -11,9 +11,3 @@ type UserRepository interface {
 	GetUserByUUID(db *gorm.DB, userUUID uuid.UUID) *domain.User
 	Save(db *gorm.DB, user domain.User) error
 }
-
-type NoteRepository interface {
-	GetNoteByUUID(db *gorm.DB, noteUUID uuid.UUID) *domain.Note
-	Delete(db *gorm.DB, note domain.Note) error
-	Save(db *gorm.DB, note domain.Note) error
-}
