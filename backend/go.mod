@@ -14,6 +14,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/crypto v0.8.0
 	gorm.io/driver/postgres v1.5.2
+	gorm.io/driver/sqlite v1.5.4
 	gorm.io/gorm v1.25.4
 )
 
@@ -33,6 +34,7 @@ require (
 	github.com/lestrrat-go/iter v1.0.0 // indirect
 	github.com/lestrrat-go/jwx v1.1.0 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
+	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect

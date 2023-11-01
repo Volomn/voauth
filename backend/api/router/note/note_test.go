@@ -12,16 +12,20 @@ import (
 	"testing"
 
 	"github.com/Volomn/voauth/backend/api"
+	noterouter "github.com/Volomn/voauth/backend/api/router/note"
 	"github.com/Volomn/voauth/backend/api/router/util"
 	"github.com/Volomn/voauth/backend/app"
 	"github.com/Volomn/voauth/backend/domain"
 	"github.com/Volomn/voauth/backend/mock"
+	qs "github.com/Volomn/voauth/backend/queryservice"
+	"github.com/Volomn/voauth/backend/queryservice/note"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAddNoteHandler(t *testing.T) {
 	var mockApplication mock.MockApplication
+	var mockNotequeryService mock.MockNoteQueryService
 
 	secretKey := "test"
 
@@ -113,14 +117,10 @@ func TestAddNoteHandler(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 
-		// Create a new context.Context and populate it with data.
-		requestCtx := context.Background()
-		requestCtx = context.WithValue(requestCtx, "app", &mockApplication)
-
 		// handle request with handler
 		rr := httptest.NewRecorder()
-		handler := api.GetApiRouter(&mockApplication)
-		handler.ServeHTTP(rr, req.WithContext(requestCtx))
+		handler := api.GetApiRouter(&mockApplication, &mockNotequeryService)
+		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what we expect.
 		assert.Equal(t, test.HandlerStatusCode, rr.Code)
@@ -143,6 +143,7 @@ func TestAddNoteHandler(t *testing.T) {
 
 func TestUpdateNoteHandler(t *testing.T) {
 	var mockApplication mock.MockApplication
+	var mockNotequeryService mock.MockNoteQueryService
 
 	secretKey := "test"
 
@@ -290,14 +291,10 @@ func TestUpdateNoteHandler(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 
-		// Create a new context.Context and populate it with data.
-		requestCtx := context.Background()
-		requestCtx = context.WithValue(requestCtx, "app", &mockApplication)
-
 		// handle request with handler
 		rr := httptest.NewRecorder()
-		handler := api.GetApiRouter(&mockApplication)
-		handler.ServeHTTP(rr, req.WithContext(requestCtx))
+		handler := api.GetApiRouter(&mockApplication, &mockNotequeryService)
+		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what we expect.
 		assert.Equal(t, test.HandlerStatusCode, rr.Code)
@@ -320,6 +317,7 @@ func TestUpdateNoteHandler(t *testing.T) {
 
 func TestDeleteNoteHandler(t *testing.T) {
 	var mockApplication mock.MockApplication
+	var mockNotequeryService mock.MockNoteQueryService
 
 	secretKey := "test"
 
@@ -421,14 +419,10 @@ func TestDeleteNoteHandler(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 
-		// Create a new context.Context and populate it with data.
-		requestCtx := context.Background()
-		requestCtx = context.WithValue(requestCtx, "app", &mockApplication)
-
 		// handle request with handler
 		rr := httptest.NewRecorder()
-		handler := api.GetApiRouter(&mockApplication)
-		handler.ServeHTTP(rr, req.WithContext(requestCtx))
+		handler := api.GetApiRouter(&mockApplication, &mockNotequeryService)
+		handler.ServeHTTP(rr, req)
 
 		// Check the status code is what we expect.
 		assert.Equal(t, test.HandlerStatusCode, rr.Code)
@@ -445,6 +439,196 @@ func TestDeleteNoteHandler(t *testing.T) {
 		assert.Equal(t, nil, err)
 
 		assert.Equal(t, test.HandlerResponseMessage, response.Msg)
+
+	}
+}
+
+func TestFetchUserNotes(t *testing.T) {
+	userUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	anotherUserUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	noteUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	contextWithoutAuth := context.Background()
+	contextWithUserAuth := context.WithValue(contextWithoutAuth, "auth", qs.Auth{UserUUID: userUUID})
+	contextWithAnotherUserAuth := context.WithValue(contextWithoutAuth, "auth", qs.Auth{UserUUID: anotherUserUUID})
+
+	var mockNotequeryService mock.MockNoteQueryService
+	mockNotequeryService.On("FetchUserNotes", contextWithoutAuth).Return([]note.NoteListItem{}, &qs.AuthenticationError{Message: "Not Authorized"})
+	mockNotequeryService.On("FetchUserNotes", contextWithUserAuth).Return([]note.NoteListItem{
+		{UUID: noteUUID, Title: "Lorem", Content: "Ipsum", IsPublic: true, IsFavorite: false, IsArchived: false},
+	}, nil)
+	mockNotequeryService.On("FetchUserNotes", contextWithAnotherUserAuth).Return([]note.NoteListItem{}, nil)
+
+	var mockApplication mock.MockApplication
+	mockApplication.On("GetAuthSecretKey", context.Background()).Return("secret")
+
+	userAccessToken, err := util.CreateUserAccessToken(mockApplication.GetAuthSecretKey(context.Background()), domain.User{Aggregate: domain.Aggregate{UUID: userUUID}})
+	assert.Equal(t, nil, err)
+
+	anotherUserAccessToken, err := util.CreateUserAccessToken(mockApplication.GetAuthSecretKey(context.Background()), domain.User{Aggregate: domain.Aggregate{UUID: anotherUserUUID}})
+	assert.Equal(t, nil, err)
+
+	tests := []struct {
+		AccessToken     string
+		StatusCode      int
+		ResponseMessage string
+		ResponseBody    []noterouter.NoteListItemResponse
+	}{
+		{AccessToken: "", StatusCode: 401, ResponseMessage: "Unauthorized", ResponseBody: nil},
+		{AccessToken: userAccessToken, StatusCode: 200, ResponseBody: []noterouter.NoteListItemResponse{
+			{
+				UUID:       noteUUID,
+				Title:      "Lorem",
+				Content:    "Ipsum",
+				IsPublic:   true,
+				IsFavorite: false,
+				IsArchived: false,
+			},
+		}},
+		{AccessToken: anotherUserAccessToken, StatusCode: 200, ResponseBody: []noterouter.NoteListItemResponse{}},
+	}
+	for _, test := range tests {
+		// construct request and ensure there is no error
+		requestURL := fmt.Sprintf("/notes/")
+		req, err := http.NewRequest("GET", requestURL, nil)
+		assert.Equal(t, nil, err)
+
+		// set authentication header and content type
+		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", test.AccessToken))
+
+		// Create a new context.Context and populate it with data.
+		// requestCtx := context.Background()
+		// requestCtx = context.WithValue(requestCtx, "app", &mockApplication)
+		// requestCtx = context.WithValue(requestCtx, "noteQueryService", &mockNotequeryService)
+
+		// handle request with handler
+		rr := httptest.NewRecorder()
+		handler := api.GetApiRouter(&mockApplication, &mockNotequeryService)
+		handler.ServeHTTP(rr, req)
+
+		// Check the status code is what we expect.
+		assert.Equal(t, test.StatusCode, rr.Code)
+
+		responseBody, err := io.ReadAll(rr.Body)
+		assert.Equal(t, nil, err)
+
+		slog.Info("Response body is", "responseBody", responseBody)
+
+		type ErrorResponse struct {
+			Msg string `json:"msg"`
+		}
+
+		var errorResponse ErrorResponse
+		var successResponse []noterouter.NoteListItemResponse
+
+		if test.StatusCode == 200 {
+			err = json.Unmarshal(responseBody, &successResponse)
+			assert.Equal(t, nil, err)
+			assert.Equal(t, test.ResponseBody, successResponse)
+		} else {
+			err = json.Unmarshal(responseBody, &errorResponse)
+			assert.Equal(t, nil, err)
+			assert.Equal(t, test.ResponseMessage, errorResponse.Msg)
+		}
+
+	}
+}
+
+func TestGetUserNote(t *testing.T) {
+	userUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	anotherUserUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	noteUUID, err := uuid.NewUUID()
+	assert.Equal(t, nil, err)
+
+	contextWithoutAuth := context.Background()
+	contextWithUserAuth := context.WithValue(contextWithoutAuth, "auth", qs.Auth{UserUUID: userUUID})
+	contextWithAnotherUserAuth := context.WithValue(contextWithoutAuth, "auth", qs.Auth{UserUUID: anotherUserUUID})
+
+	var mockNotequeryService mock.MockNoteQueryService
+	mockNotequeryService.On("GetUserNote", contextWithoutAuth, noteUUID).Return(note.Note{}, &qs.AuthenticationError{Message: "Not Authorized"})
+	mockNotequeryService.On("GetUserNote", contextWithUserAuth, noteUUID).Return(note.Note{UUID: noteUUID, Title: "Lorem", Content: "Ipsum", IsPublic: true, IsFavorite: false, IsArchived: false}, nil)
+	mockNotequeryService.On("GetUserNote", contextWithAnotherUserAuth, noteUUID).Return(note.Note{}, &qs.EntityNotFoundError{Message: "Note not found"})
+
+	var mockApplication mock.MockApplication
+	mockApplication.On("GetAuthSecretKey", context.Background()).Return("secret")
+
+	userAccessToken, err := util.CreateUserAccessToken(mockApplication.GetAuthSecretKey(context.Background()), domain.User{Aggregate: domain.Aggregate{UUID: userUUID}})
+	assert.Equal(t, nil, err)
+
+	anotherUserAccessToken, err := util.CreateUserAccessToken(mockApplication.GetAuthSecretKey(context.Background()), domain.User{Aggregate: domain.Aggregate{UUID: anotherUserUUID}})
+	assert.Equal(t, nil, err)
+
+	tests := []struct {
+		AccessToken     string
+		StatusCode      int
+		ResponseMessage string
+		ResponseBody    noterouter.NoteResponse
+	}{
+		{AccessToken: "", StatusCode: 401, ResponseMessage: "Unauthorized", ResponseBody: noterouter.NoteResponse{}},
+		{AccessToken: userAccessToken, StatusCode: 200, ResponseBody: noterouter.NoteResponse{
+			UUID:       noteUUID,
+			Title:      "Lorem",
+			Content:    "Ipsum",
+			IsPublic:   true,
+			IsFavorite: false,
+			IsArchived: false,
+		}},
+		{AccessToken: anotherUserAccessToken, StatusCode: 404, ResponseBody: noterouter.NoteResponse{}, ResponseMessage: "Note not found"},
+	}
+	for _, test := range tests {
+		// construct request and ensure there is no error
+		requestURL := fmt.Sprintf("/notes/%s", noteUUID.String())
+		req, err := http.NewRequest("GET", requestURL, nil)
+		assert.Equal(t, nil, err)
+
+		// set authentication header and content type
+		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", test.AccessToken))
+
+		// Create a new context.Context and populate it with data.
+		// requestCtx := context.Background()
+		// requestCtx = context.WithValue(requestCtx, "app", &mockApplication)
+		// requestCtx = context.WithValue(requestCtx, "noteQueryService", &mockNotequeryService)
+
+		// handle request with handler
+		rr := httptest.NewRecorder()
+		handler := api.GetApiRouter(&mockApplication, &mockNotequeryService)
+		handler.ServeHTTP(rr, req)
+
+		// Check the status code is what we expect.
+		assert.Equal(t, test.StatusCode, rr.Code)
+
+		responseBody, err := io.ReadAll(rr.Body)
+		assert.Equal(t, nil, err)
+
+		slog.Info("Response body is", "responseBody", responseBody)
+
+		type ErrorResponse struct {
+			Msg string `json:"msg"`
+		}
+
+		var errorResponse ErrorResponse
+		var successResponse noterouter.NoteResponse
+
+		if test.StatusCode == 200 {
+			err = json.Unmarshal(responseBody, &successResponse)
+			assert.Equal(t, nil, err)
+			assert.Equal(t, test.ResponseBody, successResponse)
+		} else {
+			err = json.Unmarshal(responseBody, &errorResponse)
+			assert.Equal(t, nil, err)
+			assert.Equal(t, test.ResponseMessage, errorResponse.Msg)
+		}
 
 	}
 }

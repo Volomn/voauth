@@ -8,7 +8,9 @@ import (
 	"net/http"
 
 	"github.com/Volomn/voauth/backend/api/app"
+	"github.com/Volomn/voauth/backend/api/queryservice"
 	a "github.com/Volomn/voauth/backend/app"
+	q "github.com/Volomn/voauth/backend/queryservice"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
@@ -152,4 +154,95 @@ func DeleteNoteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	render.Status(r, 200)
 	render.JSON(w, r, map[string]string{"msg": "Note deleted successfully"})
+}
+
+func FetchNotesHandler(w http.ResponseWriter, r *http.Request) {
+	svc := r.Context().Value("noteQueryService").(queryservice.NoteQueryService)
+	authUserUUID := r.Context().Value("authUserUUID").(uuid.UUID)
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "auth", q.Auth{UserUUID: authUserUUID})
+
+	notes, err := svc.FetchUserNotes(ctx)
+
+	if err != nil {
+		slog.Info("Unable fetch notes", "error", err.Error())
+		var authError *q.AuthenticationError
+		var authorizationError *q.AuthorizationError
+		var notFoundError *q.EntityNotFoundError
+
+		if errors.As(err, &authError) {
+			render.Status(r, 401)
+			render.JSON(w, r, map[string]string{"msg": authError.Message})
+			return
+		} else if errors.As(err, &authorizationError) {
+			render.Status(r, 403)
+			render.JSON(w, r, map[string]string{"msg": "Not allowed"})
+			return
+		} else if errors.As(err, &notFoundError) {
+			render.Status(r, 404)
+			render.JSON(w, r, map[string]string{"msg": notFoundError.Message})
+			return
+
+		} else {
+			render.Status(r, 400)
+			render.JSON(w, r, map[string]string{"msg": err.Error()})
+			return
+		}
+	}
+	render.Status(r, 200)
+	if err := render.RenderList(w, r, NewNoteListResponse(notes)); err != nil {
+		slog.Error("Unable to render response for fetch notes", "error", err.Error())
+		panic(err.Error())
+	}
+}
+
+func GetNoteHandler(w http.ResponseWriter, r *http.Request) {
+	noteUUIDString := chi.URLParam(r, "noteUUID")
+	slog.Info("Note uuid from request", "noteUUID", noteUUIDString)
+	noteUUID, err := uuid.Parse(noteUUIDString)
+	if err != nil {
+		render.Status(r, 422)
+		render.JSON(w, r, map[string]string{"msg": "Invalid note uuid"})
+		return
+	}
+
+	svc := r.Context().Value("noteQueryService").(queryservice.NoteQueryService)
+	authUserUUID := r.Context().Value("authUserUUID").(uuid.UUID)
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "auth", q.Auth{UserUUID: authUserUUID})
+
+	note, err := svc.GetUserNote(ctx, noteUUID)
+
+	if err != nil {
+		slog.Info("Unable get note", "noteUUID", noteUUID.String(), "authUserUUID", authUserUUID.String(), "error", err.Error())
+		var authError *q.AuthenticationError
+		var authorizationError *q.AuthorizationError
+		var notFoundError *q.EntityNotFoundError
+
+		if errors.As(err, &authError) {
+			render.Status(r, 401)
+			render.JSON(w, r, map[string]string{"msg": authError.Message})
+			return
+		} else if errors.As(err, &authorizationError) {
+			render.Status(r, 403)
+			render.JSON(w, r, map[string]string{"msg": "Not allowed"})
+			return
+		} else if errors.As(err, &notFoundError) {
+			render.Status(r, 404)
+			render.JSON(w, r, map[string]string{"msg": notFoundError.Message})
+			return
+
+		} else {
+			render.Status(r, 400)
+			render.JSON(w, r, map[string]string{"msg": err.Error()})
+			return
+		}
+	}
+	render.Status(r, 200)
+	if err := render.Render(w, r, NewNoteResponse(note)); err != nil {
+		slog.Error("Unable to render response for get note", "error", err.Error())
+		panic(err.Error())
+	}
 }

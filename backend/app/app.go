@@ -115,7 +115,7 @@ func (app *Application) AddNote(ctx context.Context, title, content string) (dom
 func (app *Application) UpdateNote(ctx context.Context, noteUUID uuid.UUID, title, content string) (domain.Note, error) {
 	auth, ok := ctx.Value("auth").(Auth)
 	if ok == false {
-		return domain.Note{}, &AuthenticationError{"Authentication not provided"}
+		return domain.Note{}, &AuthenticationError{Message: "Authentication not provided"}
 	}
 	slog.Info("About to add note", "authUserUUID", auth.UserUUID.String(), "title", title, "content", content)
 	user := app.userRepository.GetUserByUUID(app.db, auth.UserUUID)

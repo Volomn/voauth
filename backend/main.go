@@ -11,6 +11,7 @@ import (
 	"github.com/Volomn/voauth/backend/app"
 	"github.com/Volomn/voauth/backend/infra"
 	"github.com/Volomn/voauth/backend/infra/repository"
+	"github.com/Volomn/voauth/backend/queryservice/note"
 	"github.com/caarlos0/env/v9"
 	"github.com/go-chi/chi/v5"
 	"github.com/spf13/cobra"
@@ -54,8 +55,11 @@ func initServeCommand(cfg config) *cobra.Command {
 				AuthSecretKey: cfg.AuthSecretKey,
 			}, db, &infra.PasswordHasher{}, &infra.UUIDGenerator{}, &repository.UserRepository{}, &repository.NoteRepository{})
 
+			// new notequery service
+			noteQueryService := note.NewNoteQueryService(db)
+
 			// get api router
-			apiRouter := api.GetApiRouter(application)
+			apiRouter := api.GetApiRouter(application, noteQueryService)
 
 			mainRouter := chi.NewRouter()
 

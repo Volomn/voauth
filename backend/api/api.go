@@ -7,6 +7,7 @@ import (
 
 	apiApp "github.com/Volomn/voauth/backend/api/app"
 	apiMiddleware "github.com/Volomn/voauth/backend/api/middleware"
+	apiQueryService "github.com/Volomn/voauth/backend/api/queryservice"
 	"github.com/Volomn/voauth/backend/api/router/auth"
 	"github.com/Volomn/voauth/backend/api/router/note"
 	"github.com/Volomn/voauth/backend/api/router/user"
@@ -25,7 +26,7 @@ func (rd HealthResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func GetApiRouter(app apiApp.Application) chi.Router {
+func GetApiRouter(app apiApp.Application, notequeryService apiQueryService.NoteQueryService) chi.Router {
 	// create api router
 	router := chi.NewRouter()
 	slog.Info("API router created")
@@ -48,6 +49,7 @@ func GetApiRouter(app apiApp.Application) chi.Router {
 
 	}))
 	router.Use(apiMiddleware.ApplicationMiddleware(app))
+	router.Use(apiMiddleware.QueryServiceMiddleWare("noteQueryService", notequeryService))
 	router.Use(jwtauth.Verifier(tokenAuth))
 	slog.Info("API router middlewares configured")
 

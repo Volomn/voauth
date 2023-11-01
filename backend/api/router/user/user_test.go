@@ -19,6 +19,7 @@ import (
 
 func TestSignupUserHandler(t *testing.T) {
 	var mockApplication mock.MockApplication
+	var mockNotequeryService mock.MockNoteQueryService
 
 	newUserUUID, err := uuid.NewUUID()
 	assert.Equal(t, nil, err)
@@ -49,7 +50,7 @@ func TestSignupUserHandler(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
 	rr := httptest.NewRecorder()
-	handler := api.GetApiRouter(&mockApplication)
+	handler := api.GetApiRouter(&mockApplication, &mockNotequeryService)
 
 	// Create a new context.Context and populate it with data.
 	ctx := context.Background()

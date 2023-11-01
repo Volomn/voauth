@@ -20,6 +20,7 @@ import (
 
 func TestEmailAndPasswordAuthenticationHandler(t *testing.T) {
 	var mockApplication mock.MockApplication
+	var mockNotequeryService mock.MockNoteQueryService
 
 	mockApplication.On("GetAuthSecretKey", context.Background()).Return("secret")
 
@@ -70,7 +71,7 @@ func TestEmailAndPasswordAuthenticationHandler(t *testing.T) {
 		ctx = context.WithValue(ctx, "app", &mockApplication)
 
 		rr := httptest.NewRecorder()
-		handler := api.GetApiRouter(&mockApplication)
+		handler := api.GetApiRouter(&mockApplication, &mockNotequeryService)
 		handler.ServeHTTP(rr, req.WithContext(ctx))
 
 		responseBody, err := io.ReadAll(rr.Body)
