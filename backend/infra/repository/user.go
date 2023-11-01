@@ -65,7 +65,13 @@ func (repo *UserRepository) GetUserByEmail(db *gorm.DB, email string) *domain.Us
 }
 
 func (repo *UserRepository) GetUserByUUID(db *gorm.DB, userUUID uuid.UUID) *domain.User {
-	return nil
+	dbUser := DbUser{UUID: userUUID}
+	result := db.First(&dbUser)
+	if result.Error != nil {
+		return nil
+	}
+	user := repo.fromOrm(dbUser)
+	return &user
 }
 
 func (repo *UserRepository) Save(db *gorm.DB, user domain.User) error {
