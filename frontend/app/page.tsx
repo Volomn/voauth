@@ -1,42 +1,34 @@
+import Link from "next/link";
 import Image from "next/image";
 import Fingerprint from "@/public/assets/icons/fingerprint.png";
 import { Capabilities, Elevate } from "@/components/home-images";
-import ElevateImage from "@/public/assets/icons/elevate.svg";
+// import ElevateImage from "@/public/assets/icons/elevate.svg";
+import { GetStartedButton } from "@/components/login-button";
+import { Navbar } from "@/components/home/navbar";
+import { Footer } from "@/components/home/footer";
 export default function Home() {
   return (
     <>
-      <header>
-        <nav className="h-[90px] px-4 max-w-[1440px] mx-auto flex items-center">
-          {/* <Logo /> */}
-          <Image
-            src="/assets/icons/logo.svg"
-            width={100}
-            height={18}
-            alt="logo"
-          />
-        </nav>
-      </header>
+      <Navbar />
       <main>
         <section id="banner" className="h-[60vh] flex items-center relative">
           <div className="absolute top-0 w-full flex justify-center">
-            <Image src={Fingerprint} alt="" />
+            <Image src={Fingerprint} alt="" priority />
           </div>
           <div className="flex flex-col gap-4 max-w-2xl mx-auto text-center relative">
             <h1 className="text-primary-01 text-5xl font-semibold font-secondary">
               Unlock the power of OAuth2 with Voauth
             </h1>
             <article className="text-shade-01 text-lg">
-              The Voath application is a web-based tool designed to show
+              The Voauth application is a web-based tool designed to show
               developers how to create their own OAuth provider platforms,
               similar to those of Google, Twitter, GitHub, and more.
             </article>
-            <button className="bg-primary-01 px-8 py-5 rounded-lg text-white mt-[26px] w-fit mx-auto">
-              Get Started
-            </button>
+            <GetStartedButton />
           </div>
         </section>
 
-        <section className="flex justify-between items-center px-4 max-w-[1440px] mx-auto py-[150px]">
+        <section className="flex justify-between items-center px-[90px] max-w-[1440px] mx-auto py-[150px]">
           <div className="max-w-[562px]">
             <h2 className="text-primary-01 leading-[48px] text-[40px] font-semibold font-secondary">
               Elevate your note taking experience with Voauth
@@ -50,7 +42,7 @@ export default function Home() {
           <Elevate />
         </section>
 
-        <section className="px-4 max-w-[1440px] mx-auto">
+        <section className="px-[90px] max-w-[1440px] mx-auto">
           <div className="max-w-[562px]">
             <h2 className="text-primary-01 leading-[48px] text-[40px] font-semibold font-secondary">
               The Voauth application has its capabilities
@@ -121,12 +113,14 @@ export default function Home() {
               {`At Voauth, we take pride in the advanced technology stack we've
             chosen to create a powerful and reliable platform.`}
             </p>
-            <button className="bg-primary-01 px-8 py-5 rounded-lg text-white mt-2 w-fit">
-              Get Started
-            </button>
+            <Link href="/login">
+              <button className="bg-primary-01 px-8 py-5 rounded-lg text-white mt-2 w-fit">
+                Get Started
+              </button>
+            </Link>
           </div>
         </section>
-        <section className="flex justify-center max-w-[1440px] mx-auto py-[100px] px-4">
+        <section className="flex justify-center max-w-[1440px] mx-auto py-[100px] px-[90px]">
           <div className="flex flex-col items-center text-center gap-4">
             <h2 className="font-semibold text-primary-01 text-[40px] font-secondary tracking-[-1.74px]">
               Github Repository Link
@@ -135,9 +129,11 @@ export default function Home() {
               Access and explore the source code, documentation, and project
               files of Voauth.
             </p>
-            <button className="border-2 border-primary-01 px-8 py-5 rounded-lg text-primary-01 w-fit mt-2 font-medium">
-              View project on Github
-            </button>
+            <a href="https://github.com/volomn/voauth" target="_blank">
+              <button className="border-2 border-primary-01 px-8 py-5 rounded-lg text-primary-01 w-fit mt-2 font-medium">
+                View project on Github
+              </button>
+            </a>
           </div>
         </section>
       </main>
@@ -156,20 +152,7 @@ export default function Home() {
         </div>
       </section> */}
 
-      <footer className="bg-primary-01">
-        <div className="max-w-[1440px] h-[86px] flex items-center px-4 mx-auto">
-          <Image
-            src="/assets/icons/logo-white.svg"
-            width={100}
-            height={18}
-            alt="logo"
-          />
-
-          <span className="text-white ml-[100px] opacity-50">
-            {` © ${new Date().getFullYear()} Volomn - All rights reserved`}
-          </span>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }

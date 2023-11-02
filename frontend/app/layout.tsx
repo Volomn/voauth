@@ -4,11 +4,10 @@ import "./globals.css";
 
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
-import { MantineProvider, ColorSchemeScript } from "@mantine/core";
-import { ModalsProvider } from "@mantine/modals";
-import { Notifications } from "@mantine/notifications";
-import ReactQueryProvider from "@/providers/react-query";
+import { ColorSchemeScript } from "@mantine/core";
+
 import { montserrat, sora } from "@/fonts/fonts";
+import Providers from "@/providers/providers";
 
 export const metadata = {
   title: "Voauth",
@@ -29,30 +28,7 @@ export default function RootLayout({
       <body
         className={`${montserrat.variable} ${sora.variable} ${montserrat.className}`}
       >
-        <MantineProvider
-          theme={{
-            primaryColor: "brand",
-            colors: {
-              brand: [
-                "#eff0fb",
-                "#dbdcf0",
-                "#b3b6e3",
-                "#898dd6",
-                "#656acb",
-                "#4f54c4",
-                "#1B2063",
-                "#151957",
-                "#0c0f3d",
-                "#080a31",
-              ],
-            },
-          }}
-        >
-          <ModalsProvider>
-            <Notifications position="top-right" />
-            <ReactQueryProvider>{children}</ReactQueryProvider>
-          </ModalsProvider>
-        </MantineProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

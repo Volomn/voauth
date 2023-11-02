@@ -2,6 +2,7 @@
 import { useLogin } from "@/api/hooks/auth";
 import { Button, PasswordInput, TextInput } from "@mantine/core";
 import { zodResolver, useForm } from "@mantine/form";
+import { signIn } from "next-auth/react";
 import { z } from "zod";
 
 const loginValidator = z.object({
@@ -23,6 +24,11 @@ export function LoginForm() {
 
   function handleSubmit(values: TLoginForm) {
     login(values);
+    // signIn("credentials", {
+    //   ...values,
+    //   redirect: false,
+    //   callbackUrl: "/dashboard",
+    // });
   }
 
   return (
