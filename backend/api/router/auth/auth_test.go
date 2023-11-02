@@ -1,4 +1,4 @@
-package auth
+package auth_test
 
 import (
 	"bytes"
@@ -10,33 +10,19 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Volomn/voauth/backend/api"
 	"github.com/Volomn/voauth/backend/app"
 	"github.com/Volomn/voauth/backend/domain"
+	"github.com/Volomn/voauth/backend/mock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-type MockApplication struct{ mock.Mock }
-
-func (app *MockApplication) SignupUser(firstName, lastName, email, password string) (domain.User, error) {
-	args := app.Called(firstName, lastName, email, password)
-	return args.Get(0).(domain.User), args.Error(1)
-}
-
-func (app *MockApplication) AuthenticateWithEmailAndPassword(email, password string) (domain.User, error) {
-	args := app.Called(email, password)
-	return args.Get(0).(domain.User), args.Error(1)
-}
-
-func (app *MockApplication) GetAuthSecretKey() string {
-	args := app.Called()
-	return args.String(0)
-}
 func TestEmailAndPasswordAuthenticationHandler(t *testing.T) {
-	var mockApplication MockApplication
+	var mockApplication mock.MockApplication
+	var mockNotequeryService mock.MockNoteQueryService
 
-	mockApplication.On("GetAuthSecretKey").Return("secret")
+	mockApplication.On("GetAuthSecretKey", context.Background()).Return("secret")
 
 	newUserUUID, err := uuid.NewUUID()
 	assert.Equal(t, nil, err)
@@ -69,24 +55,23 @@ func TestEmailAndPasswordAuthenticationHandler(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		mockApplication.On("AuthenticateWithEmailAndPassword", test.Email, test.Password).Return(test.ExpectedUser, test.ExpectedError)
+		mockApplication.On("AuthenticateWithEmailAndPassword", context.Background(), test.Email, test.Password).Return(test.ExpectedUser, test.ExpectedError)
 		var jsonData = []byte(fmt.Sprintf(`{
 			"email": "%s",
 			"password": "%s"
 		}`, test.Email, test.Password))
 
-		req, err := http.NewRequest("POST", "/api/auth/", bytes.NewBuffer(jsonData))
+		req, err := http.NewRequest("POST", "/auth/", bytes.NewBuffer(jsonData))
 		assert.Equal(t, nil, err)
 
 		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
-		rr := httptest.NewRecorder()
-
-		handler := http.HandlerFunc(EmailAndPasswordAuthenticationHandler)
-
 		// Create a new context.Context and populate it with data.
 		ctx := context.Background()
 		ctx = context.WithValue(ctx, "app", &mockApplication)
+
+		rr := httptest.NewRecorder()
+		handler := api.GetApiRouter(&mockApplication, &mockNotequeryService)
 		handler.ServeHTTP(rr, req.WithContext(ctx))
 
 		responseBody, err := io.ReadAll(rr.Body)

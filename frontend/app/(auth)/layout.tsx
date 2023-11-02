@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Box, Title } from "@mantine/core";
 import Image from "next/image";
 import CloudImage from "@/public/assets/cloud.png";
+import Link from "next/link";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -14,9 +15,11 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <Image src={CloudImage} alt="" />
         </Box>
         <section className="p-6 flex flex-col gap-8 bg-white relative">
-          <Title order={1} c="brand.7" style={{ color: "brand.4" }}>
-            Voauth
-          </Title>
+          <Link href="/">
+            <Title order={1} c="brand.7" style={{ color: "brand.4" }}>
+              Voauth
+            </Title>
+          </Link>
 
           {children}
         </section>

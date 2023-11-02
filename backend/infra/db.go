@@ -18,5 +18,10 @@ func InitDb(dbHost, dbUser, dbPassword, dbName string, dbPort int) *gorm.DB {
 }
 
 func AutoMigrateDB(db *gorm.DB) {
-	db.AutoMigrate(&repository.DbUser{})
+	db.AutoMigrate(&repository.DbUser{}, &repository.DbNote{})
+}
+
+func DropAllTables(db *gorm.DB) {
+	db.Migrator().DropTable(&repository.DbUser{})
+	db.Migrator().DropTable(&repository.DbUser{})
 }

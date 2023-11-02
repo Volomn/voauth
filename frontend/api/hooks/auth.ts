@@ -12,7 +12,7 @@ export function useRegister() {
       return axiosInstance.post("/users/", payload);
     },
     onSuccess: (response: AxiosResponse) => {
-      if (response.statusText === "Created") {
+      if (response.status === 201) {
         showNotification({
           message: response.data.msg || "Account created successfully",
           color: "green",
@@ -38,7 +38,7 @@ export function useLogin() {
       return axiosInstance.post("/auth/", payload);
     },
     onSuccess: (response: AxiosResponse) => {
-      if (response.statusText === "OK") {
+      if (response.status === 200) {
         showNotification({
           message: response.data.msg || "Login successful",
           color: "green",

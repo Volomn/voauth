@@ -17,7 +17,7 @@ build_api_prod_image:
 	cd backend && docker build -t 206722258093.dkr.ecr.eu-west-1.amazonaws.com/voauth_api:prod -f Dockerfile .
 
 build_web_prod_image:
-	cd frontend && docker build --build-arg APP_BASE_URL=https://api.voauth.volomn.io/api -t 206722258093.dkr.ecr.eu-west-1.amazonaws.com/voauth_web:prod -f Dockerfile .
+	cd frontend && docker build --build-arg API_BASE_URL=https://api.voauth.volomn.io/api -t 206722258093.dkr.ecr.eu-west-1.amazonaws.com/voauth_web:prod -f Dockerfile .
 
 push_api_prod_image:
 	docker push 206722258093.dkr.ecr.eu-west-1.amazonaws.com/voauth_api:prod

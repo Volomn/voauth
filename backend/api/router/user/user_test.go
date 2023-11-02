@@ -1,4 +1,4 @@
-package user
+package user_test
 
 import (
 	"bytes"
@@ -10,31 +10,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Volomn/voauth/backend/api"
 	"github.com/Volomn/voauth/backend/domain"
+	"github.com/Volomn/voauth/backend/mock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
-type MockApplication struct{ mock.Mock }
-
-func (app *MockApplication) SignupUser(firstName, lastName, email, password string) (domain.User, error) {
-	args := app.Called(firstName, lastName, email, password)
-	return args.Get(0).(domain.User), args.Error(1)
-}
-
-func (app *MockApplication) AuthenticateWithEmailAndPassword(email, password string) (domain.User, error) {
-	args := app.Called(email, password)
-	return args.Get(0).(domain.User), args.Error(1)
-}
-
-func (app *MockApplication) GetAuthSecretKey() string {
-	args := app.Called()
-	return args.String(0)
-}
-
 func TestSignupUserHandler(t *testing.T) {
-	var mockApplication MockApplication
+	var mockApplication mock.MockApplication
+	var mockNotequeryService mock.MockNoteQueryService
 
 	newUserUUID, err := uuid.NewUUID()
 	assert.Equal(t, nil, err)
@@ -49,7 +34,8 @@ func TestSignupUserHandler(t *testing.T) {
 		Bio:            "",
 	}
 
-	mockApplication.On("SignupUser", newUser.FirstName, newUser.LastName, newUser.Email, "password").Return(*newUser, nil)
+	mockApplication.On("SignupUser", context.Background(), newUser.FirstName, newUser.LastName, newUser.Email, "password").Return(*newUser, nil)
+	mockApplication.On("GetAuthSecretKey", context.Background()).Return("secret")
 
 	var jsonData = []byte(fmt.Sprintf(`{
 		"firstName": "%s",
@@ -58,14 +44,13 @@ func TestSignupUserHandler(t *testing.T) {
 		"password": "%s"
 	}`, newUser.FirstName, newUser.LastName, newUser.Email, "password"))
 
-	req, err := http.NewRequest("POST", "/api/users/", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", "/users/", bytes.NewBuffer(jsonData))
 	assert.Equal(t, nil, err)
 
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
 	rr := httptest.NewRecorder()
-
-	handler := http.HandlerFunc(SignupUserHandler)
+	handler := api.GetApiRouter(&mockApplication, &mockNotequeryService)
 
 	// Create a new context.Context and populate it with data.
 	ctx := context.Background()
