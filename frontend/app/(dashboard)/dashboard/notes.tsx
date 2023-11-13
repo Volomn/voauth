@@ -1,25 +1,33 @@
-"use client";
+// "use client";
 
+// import { useFetchNotes } from "@/api/hooks/notes";
+// import { LoadingOverlay, Skeleton } from "@mantine/core";
 import Link from "next/link";
+// import { EmptyNotes } from "./empty-notes";
+import { Note } from "@/schema";
 
-export function Notes() {
-  const notes = [1, 2, 3, 4];
+export function Notes({ notes }: { notes: Note[] }) {
+  // const { data, isLoading } = useFetchNotes();
+
+  // if (isLoading) {
+  //   return <Skeleton className="h-full w-full" />;
+  // }
   return (
-    <section className="flex-grow p-5">
-      <section className="grid grid-cols-4 grid-rows-[200px] gap-8">
+    <section className="p-5 relative overflow-y-auto">
+      <section className="grid grid-cols-4 gap-8 h-full">
         {notes.map((note) => (
-          <Note key={note} index={note} />
+          <Note key={note.uuid} note={note} />
         ))}
       </section>
     </section>
   );
 }
 
-function Note({ index }: { index: number }) {
+function Note({ note }: { note: Note }) {
   return (
-    <Link href={`/notes/${index}`}>
-      <div className="p-4 border rounded-md bg-[#FAFAFA] h-full flex flex-col justify-end">
-        <span className="mt-auto">Note {index}</span>
+    <Link href={`/notes/${note.uuid}`}>
+      <div className="p-4 border rounded-md bg-[#FAFAFA] h-48 flex flex-col justify-end">
+        <span className="mt-auto">{note.title}</span>
       </div>
     </Link>
   );

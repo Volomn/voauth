@@ -7,7 +7,7 @@ import "@mantine/notifications/styles.css";
 import { ColorSchemeScript } from "@mantine/core";
 
 import { montserrat, sora } from "@/fonts/fonts";
-import Providers from "@/providers/providers";
+import Providers from "@/app/providers/providers";
 
 export const metadata = {
   title: "Voauth",

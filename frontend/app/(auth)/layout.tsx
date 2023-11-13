@@ -1,8 +1,9 @@
 import { ReactNode } from "react";
-import { Box, Title } from "@mantine/core";
+import { Box } from "@mantine/core";
 import Image from "next/image";
 import CloudImage from "@/public/assets/cloud.png";
 import Link from "next/link";
+import NavLogo from "@/public/assets/icons/logo.png";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -16,9 +17,13 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </Box>
         <section className="p-6 flex flex-col gap-8 bg-white relative">
           <Link href="/">
-            <Title order={1} c="brand.7" style={{ color: "brand.4" }}>
-              Voauth
-            </Title>
+            <Image
+              src={NavLogo}
+              width={97}
+              height={22}
+              alt="Voauth logo"
+              className="cursor-pointer"
+            />
           </Link>
 
           {children}

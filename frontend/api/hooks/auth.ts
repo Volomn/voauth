@@ -1,7 +1,7 @@
 import { showNotification } from "@mantine/notifications";
 import { AxiosResponse, AxiosError } from "axios";
 import { useMutation } from "react-query";
-import { axiosInstance } from "..";
+import { _axiosInstance, axiosInstance } from "..";
 import { TRegisterForm } from "@/app/(auth)/register/form";
 import { TLoginForm } from "@/app/(auth)/login/form";
 import { useRouter } from "next/navigation";
@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 export function useRegister() {
   return useMutation({
     mutationFn: (payload: Omit<TRegisterForm, "confirmPassword">) => {
-      return axiosInstance.post("/users/", payload);
+      return _axiosInstance.post("/api/users/", payload);
     },
     onSuccess: (response: AxiosResponse) => {
       if (response.status === 201) {

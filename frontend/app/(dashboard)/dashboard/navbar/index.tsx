@@ -1,6 +1,11 @@
+"use client";
+import { useCreateEmptyNote } from "@/api/hooks/notes";
 import ProfileAvatar from "@/components/profile-avatar";
-import { Group, TextInput } from "@mantine/core";
+import { Button, Group, TextInput } from "@mantine/core";
+
 export function Navbar() {
+  const { createEmptyNote, isLoading } = useCreateEmptyNote();
+
   return (
     <div className="p-4 border-b">
       <Group justify="space-between">
@@ -12,7 +17,16 @@ export function Navbar() {
           maw="600px"
         />
 
-        <ProfileAvatar />
+        <Group>
+          <Button
+            variant="transparent"
+            onClick={createEmptyNote}
+            loading={isLoading}
+          >
+            New note
+          </Button>
+          <ProfileAvatar />
+        </Group>
       </Group>
     </div>
   );

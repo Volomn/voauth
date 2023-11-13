@@ -1,31 +1,42 @@
-import { Box, TextInput, Textarea } from "@mantine/core";
+import { Suspense } from "react";
+import { auth } from "@/lib/auth";
 import { Navbar } from "../navbar";
+import NoteForm from "./form";
+import { appUrl } from "../../dashboard/page";
+import { Note } from "@/schema";
 
-export default function Note() {
+async function fetchNote(id: string) {
+  const session = await auth();
+  const response = await fetch(appUrl(`/api/notes/${id}`), {
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${session?.user.accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to fetch note");
+  }
+
+  return response.json();
+}
+
+export default async function Note({
+  params: { id },
+}: {
+  params: { id: string };
+}) {
+  const note: Note = await fetchNote(id);
   return (
     <main className="min-h-screen flex flex-col">
-      <Navbar />
-      <Box className="p-5">
-        <TextInput
-          size="xl"
-          placeholder="Title"
-          className="border-none outline-none"
-          classNames={{
-            input: "border-none outline-none text-5xl",
-          }}
-          unstyled
-        />
-
-        <Textarea
-          className="mt-5 leading-loose"
-          placeholder="Note content..."
-          unstyled
-          classNames={{
-            input:
-              "border-none outline-none text-xl resize-none w-full min-h-[60vh] font-normal",
-          }}
-        />
-      </Box>
+      <Navbar note={note} />
+      <Suspense
+        fallback={
+          <h1 className="text-slate-600 text-3xl">Loading content...</h1>
+        }
+      >
+        <NoteForm initialValues={note} />
+      </Suspense>
     </main>
   );
 }
