@@ -1,0 +1,48 @@
+name: Go Integration and Deployment
+
+on: 
+  push: 
+  # make it a dev branch instead
+    branches: [ dev ] 
+  pull requests:
+    branches: [ dev ]
+
+jobs: 
+  build-push:
+    name: Build and push docker images
+    runs-on: ubuntu-latest
+
+    steps: 
+    - name: Checkout
+      uses: actions/checkout@v3
+    
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Authenticate Docker with Amazon ECR
+      run: |
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+
+    - name: Build Frontend Docker Image
+      run: |
+        cd frontend
+        docker build -t ${{ secrets.ECR_REGISTRY }}/frontend-image:latest .
+        docker push ${{ secrets.ECR_REGISTRY }}/frontend-image:latest
+    
+    - name: Build Backend Docker Image
+      run: |
+        cd backend
+        docker build -t ${{ secrets.ECR_REGISTRY }}/backend-image:latest .
+        docker push ${{ secrets.ECR_REGISTRY }}/backend-image:latest
+  
+    - name: Deploy Docker Images to Digital Ocean Droplet
+      run: |
+        scp -o StrictHostKeyChecking=no -r ${{ secrets.ECR_REGISTRY }}/frontend-image:latest ${{ secrets.ECR_REGISTRY }}/backend-image:latest ${{ secrets.ECR_REGISTRY }}:/path/to/deployment
+
+    - name: SSH into Digital Ocean Droplet and Pull & Run Docker Images
+      run: |
+        ssh -o StrictHostKeyChecking=no root@${{ secrets.DROPLET_IP }} 'cd /path/to/deployment && make api -d'
