@@ -35,7 +35,7 @@ jobs:
     - name: Build Frontend Docker Image
       run: |
         cd frontend
-        docker build -t $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:$GITHUB_SHA .
+        docker build --build-arg API_BASE_URL=${{secrets.API_BASE_URL}} -t $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:$GITHUB_SHA .
         docker push $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:$GITHUB_SHA
 
     - name: Build Backend Docker Image
