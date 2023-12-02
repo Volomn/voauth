@@ -35,5 +35,5 @@ jobs:
     - name: Build Frontend Docker Image
       run: |
         cd frontend
-        docker build -t ${ECR_REGISTRY}/${ECR_FRONTEND_REPOSITORY}:${github.sha} .
-        docker push ${ECR_REGISTRY}/${ECR_FRONTEND_REPOSITORY}:${github.sha}
+        docker build -t $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:${github.sha} .
+        docker push $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:${github.sha}
