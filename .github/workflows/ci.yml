@@ -4,8 +4,11 @@ on:
   push: 
   # make it a dev branch instead
     branches: [ dev ] 
-  pull requests:
+  pull_request:
+    types:
+      - opened
     branches: [ dev ]
+
 
 jobs: 
   build-push:
