@@ -4,7 +4,7 @@ on:
   push: 
   # make it a dev branch instead
     branches: [ dev ] 
-  pull requests:
+  pull request:
     branches: [ dev ]
 
 jobs: 
