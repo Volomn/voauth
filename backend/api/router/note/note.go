@@ -246,3 +246,130 @@ func GetNoteHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err.Error())
 	}
 }
+
+
+
+
+func MarkNoteHandler(w http.ResponseWriter, r *http.Request) {
+    // Extract the "noteUUID" parameter from the URL
+    noteUUIDString := chi.URLParam(r, "noteUUID")
+    slog.Info("Note uuid from request", "noteUUID", noteUUIDString)
+
+    // Parse the noteUUIDString into a UUID (Universally Unique Identifier)
+    noteUUID, err := uuid.Parse(noteUUIDString)
+    if err != nil {
+        // If parsing fails, respond with a 422 Unprocessable Entity status
+        render.Status(r, 422)
+        render.JSON(w, r, map[string]string{"msg": "Invalid note uuid"})
+        return
+    }
+
+    // Retrieve the "app" and "authUserUUID" values from the request context
+    application := r.Context().Value("app").(app.Application)
+    authUserUUID := r.Context().Value("authUserUUID").(uuid.UUID)
+
+    // Create a new context with authentication information
+    ctx := context.Background()
+    ctx = context.WithValue(ctx, "auth", a.Auth{UserUUID: authUserUUID})
+
+    // Call the MarkNote method of the application with the noteUUID
+    err = application.MarkNote(ctx, noteUUID)
+
+    if err != nil {
+        // Handle different types of errors that may occur during marking the note
+        slog.Info("Unable to mark note", "error", err.Error())
+
+        var authError *a.AuthenticationError
+        var authorizationError *a.AuthorizationError
+        var notFoundError *a.EntityNotFoundError
+
+        if errors.As(err, &authError) {
+            // If it's an authentication error, respond with a 401 Unauthorized status
+            render.Status(r, 401)
+            render.JSON(w, r, map[string]string{"msg": authError.Message})
+            return
+        } else if errors.As(err, &authorizationError) {
+            // If it's an authorization error, respond with a 403 Forbidden status
+            render.Status(r, 403)
+            render.JSON(w, r, map[string]string{"msg": "Not allowed"})
+            return
+        } else if errors.As(err, &notFoundError) {
+            // If it's an entity not found error, respond with a 404 Not Found status
+            render.Status(r, 404)
+            render.JSON(w, r, map[string]string{"msg": notFoundError.Message})
+            return
+        } else {
+            // For other errors, respond with a 400 Bad Request status
+            render.Status(r, 400)
+            render.JSON(w, r, map[string]string{"msg": err.Error()})
+            return
+        }
+    }
+
+    // If there are no errors, respond with a 200 OK status
+    render.Status(r, 200)
+    render.JSON(w, r, map[string]string{"msg": "Note marked successfully"})
+}
+
+
+
+
+
+
+	      
+
+func UnarchiveNoteHandler(w http.ResponseWriter, r *http.Request) {
+    // Extract the "noteUUID" parameter from the URL
+    noteUUIDString := chi.URLParam(r, "noteUUID")
+    slog.Info("Note uuid from request", "noteUUID", noteUUIDString)
+
+    // Parse the noteUUIDString into a UUID (Universally Unique Identifier)
+    noteUUID, err := uuid.Parse(noteUUIDString)
+    if err != nil {
+        // If parsing fails, respond with a 422 Unprocessable Entity status
+        render.Status(r, 422)
+        render.JSON(w, r, map[string]string{"msg": "Invalid note uuid"})
+        return
+    }
+
+    // Retrieve the "app" and "authUserUUID" values from the request context
+    application := r.Context().Value("app").(app.Application)
+    authUserUUID := r.Context().Value("authUserUUID").(uuid.UUID)
+
+    // Create a new context with authentication information
+    ctx := context.Background()
+    ctx = context.WithValue(ctx, "auth", a.Auth{UserUUID: authUserUUID})
+
+    // Call the UnarchiveNote method of the application with the noteUUID
+    err = application.UnarchiveNote(ctx, noteUUID)
+
+    // Handle different types of errors that may occur during unarchiving the note
+    if errors.As(err, &authError) {
+        // If it's an authentication error, respond with a 401 Unauthorized status
+        render.Status(r, 401)
+        render.JSON(w, r, map[string]string{"msg": authError.Message})
+        return
+    } else if errors.As(err, &authorizationError) {
+        // If it's an authorization error, respond with a 403 Forbidden status
+        render.Status(r, 403)
+        render.JSON(w, r, map[string]string{"msg": "Not allowed"})
+        return
+    } else if errors.As(err, &notFoundError) {
+        // If it's an entity not found error, respond with a 404 Not Found status
+        render.Status(r, 404)
+        render.JSON(w, r, map[string]string{"msg": notFoundError.Message})
+        return
+    } else {
+        // For other errors, respond with a 400 Bad Request status
+        render.Status(r, 400)
+        render.JSON(w, r, map[string]string{"msg": err.Error()})
+        return
+    }
+
+    // If there are no errors, respond with a 200 OK status
+    render.Status(r, 200)
+    render.JSON(w, r, map[string]string{"msg": "Note unarchived successfully"})
+}
+
+
+
