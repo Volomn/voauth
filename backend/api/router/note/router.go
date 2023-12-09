@@ -14,5 +14,16 @@ func GetNoteRouter() chi.Router {
 	router.Delete("/{noteUUID}", middleware.AuthenticationMiddleware(http.HandlerFunc(DeleteNoteHandler)).(http.HandlerFunc))
 	router.Get("/", middleware.AuthenticationMiddleware(http.HandlerFunc(FetchNotesHandler)).(http.HandlerFunc))
 	router.Get("/{noteUUID}", middleware.AuthenticationMiddleware(http.HandlerFunc(GetNoteHandler)).(http.HandlerFunc))
-	return router
+
+	
+
+
+	// New routes for marking as favorite and unarchiving
+    router.Put("/{noteUUID}/mark-as-favorite", http.HandlerFunc(MarkNoteHandler))
+    router.Put("/{noteUUID}/unarchive", http.HandlerFunc(UnarchiveNoteHandler))
+
+    return router
+
+
+	
 }

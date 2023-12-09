@@ -246,3 +246,114 @@ func GetNoteHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err.Error())
 	}
 }
+
+
+
+
+
+
+
+
+
+
+// MarkNoteHandler handles marking a note as a favorite.
+func MarkNoteHandler(w http.ResponseWriter, r *http.Request) {
+    noteUUIDString := chi.URLParam(r, "noteUUID")
+    slog.Info("Note uuid from request", "noteUUID", noteUUIDString)
+    noteUUID, err := uuid.Parse(noteUUIDString)
+    if err != nil {
+        render.Status(r, 422)
+        render.JSON(w, r, map[string]string{"msg": "Invalid note uuid"})
+        return
+    }
+
+    application := r.Context().Value("app").(app.Application)
+    authUserUUID := r.Context().Value("authUserUUID").(uuid.UUID)
+
+    ctx := context.Background()
+    ctx = context.WithValue(ctx, "auth", a.Auth{UserUUID: authUserUUID})
+
+    // Assuming you have a method to mark a note as a favorite in your app.Application interface
+    err = application.MarkNote(ctx, noteUUID)
+
+    if err != nil {
+        slog.Info("Unable to mark note as favorite", "error", err.Error())
+        handleNoteUpdateError(w, r, err)
+        return
+    }
+
+    render.Status(r, 200)
+    render.JSON(w, r, map[string]string{"msg": "Note marked as favorite successfully"})
+}
+
+
+
+// UnarchiveNoteHandler handles unarchiving a note.
+func UnarchiveNoteHandler(w http.ResponseWriter, r *http.Request) {
+    noteUUIDString := chi.URLParam(r, "noteUUID")
+    slog.Info("Note uuid from request", "noteUUID", noteUUIDString)
+    noteUUID, err := uuid.Parse(noteUUIDString)
+    if err != nil {
+        render.Status(r, 422)
+        render.JSON(w, r, map[string]string{"msg": "Invalid note uuid"})
+        return
+    }
+
+    application := r.Context().Value("app").(app.Application)
+    authUserUUID := r.Context().Value("authUserUUID").(uuid.UUID)
+
+    ctx := context.Background()
+    ctx = context.WithValue(ctx, "auth", a.Auth{UserUUID: authUserUUID})
+
+    // Assuming you have a method to unarchive a note in your app.Application interface
+    err = application.UnarchiveNote(ctx, noteUUID)
+
+    if err != nil {
+        slog.Info("Unable to unarchive note", "error", err.Error())
+        handleNoteUpdateError(w, r, err)
+        return
+    }
+
+    render.Status(r, 200)
+    render.JSON(w, r, map[string]string{"msg": "Note unarchived successfully"})
+}
+
+
+
+
+
+// handleNoteUpdateError handles the error response for note updates.
+func handleNoteUpdateError(w http.ResponseWriter, r *http.Request, err error) {
+    slog.Error("Note update error", "error", err.Error())
+
+    var authError *a.AuthenticationError
+    var authorizationError *a.AuthorizationError
+    var notFoundError *a.EntityNotFoundError
+
+    switch {
+    case errors.As(err, &authError):
+        render.Status(r, 401)
+        render.JSON(w, r, map[string]string{"msg": authError.Message})
+    case errors.As(err, &authorizationError):
+        render.Status(r, 403)
+        render.JSON(w, r, map[string]string{"msg": "Not allowed"})
+    case errors.As(err, &notFoundError):
+        render.Status(r, 404)
+        render.JSON(w, r, map[string]string{"msg": notFoundError.Message})
+    default:
+        render.Status(r, 400)
+        render.JSON(w, r, map[string]string{"msg": err.Error()})
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+

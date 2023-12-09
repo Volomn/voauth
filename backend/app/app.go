@@ -174,3 +174,14 @@ func (app *Application) DeleteNote(ctx context.Context, noteUUID uuid.UUID) erro
 	}
 	return nil
 }
+
+
+func (app *Application) MarkNote(ctx context.Context, noteUUID uuid.UUID) error {
+    // Implement the logic to mark a note as favorite
+    return nil
+}
+
+func (app *Application) UnarchiveNote(ctx context.Context, noteUUID uuid.UUID) error {
+    // Implement the logic to unarchive a note
+    return nil
+}
