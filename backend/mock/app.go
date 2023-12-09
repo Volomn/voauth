@@ -39,3 +39,15 @@ func (app *MockApplication) DeleteNote(ctx context.Context, noteUUID uuid.UUID) 
 	args := app.Called(ctx, noteUUID)
 	return args.Error(0)
 }
+
+
+
+func (app *MockApplication) MarkNote(ctx context.Context, noteUUID uuid.UUID) error {
+    args := app.Called(ctx, noteUUID)
+    return args.Error(0)
+}
+
+func (app *MockApplication) UnarchiveNote(ctx context.Context, noteUUID uuid.UUID) error {
+    args := app.Called(ctx, noteUUID)
+    return args.Error(0)
+}

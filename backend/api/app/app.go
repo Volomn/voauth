@@ -14,4 +14,13 @@ type Application interface {
 	AddNote(ctx context.Context, title, content string) (domain.Note, error)
 	UpdateNote(ctx context.Context, noteUUID uuid.UUID, title, content string) (domain.Note, error)
 	DeleteNote(ctx context.Context, noteUUID uuid.UUID) error
+
+
+// New methods added
+MarkNote(ctx context.Context, noteUUID uuid.UUID) error
+UnarchiveNote(ctx context.Context, noteUUID uuid.UUID) error
+
+	
 }
+
+
