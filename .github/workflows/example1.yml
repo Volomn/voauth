@@ -1,0 +1,52 @@
+name: Deploy Frontend
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker Frontend image tag to deploy'
+        required: true
+
+
+env:
+  ECR_REGISTRY: ${{ secrets.VOLOMN_AWS_ECR_REGISTRY }}
+  ECR_FRONTEND_REPOSITORY: voauth_web
+
+jobs:
+  deploy:
+    name: Deploy Frontend image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{secrets.VOLOMN_AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.VOLOMN_AWS_SECRET_ACCESS_KEY}}
+          aws-region: ${{secrets.AWS_REGION}}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+
+      - name: Tag Frontend
+        run: |
+          docker pull $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:${{inputs.image_tag}}
+          docker tag $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:${{inputs.image_tag}} $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:dev
+          docker push $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:dev
+          
+
+      - name: Restart Containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          envs: ECR_REGISTRY, ECR_FRONTEND_REPOSITORY
+          script: |
+            cd ~/Voauth
+            aws ecr get-login-password --region ${{secrets.AWS_REGION}} | docker login --username AWS --password-stdin $ECR_REGISTRY
+            docker pull $ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:dev
+            make deploy
