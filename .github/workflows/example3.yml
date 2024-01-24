@@ -1,0 +1,38 @@
+name: Build and Push Backend
+
+on: 
+  push: 
+    # make it a dev branch instead
+    branches: [ dev ]
+
+env:
+  ECR_REGISTRY: ${{ secrets.VOLOMN_AWS_ECR_REGISTRY }}
+  ECR_BACKEND_REPOSITORY: voauth_api
+
+
+jobs: 
+  build-push:
+    name: Build and push Backend docker image
+    runs-on: ubuntu-latest
+
+    steps: 
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{secrets.VOLOMN_AWS_ACCESS_KEY_ID}}
+        aws-secret-access-key: ${{secrets.VOLOMN_AWS_SECRET_ACCESS_KEY}}
+        aws-region: ${{secrets.AWS_REGION}}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+
+    - name: Build Backend Docker Image
+      run: |
+        cd backend
+        docker build -t $ECR_REGISTRY/$ECR_BACKEND_REPOSITORY:$GITHUB_SHA .
+        docker push $ECR_REGISTRY/$ECR_BACKEND_REPOSITORY:$GITHUB_SHA
